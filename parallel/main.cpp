@@ -34,6 +34,6 @@ void synchronousPointToPontCommunication() {
 
 int main(int argc, char* argv[]) {
     mpi::environment env(argc, argv);
-    synchronousPointToPontCommunication();
+    helloMPI();
     return 0;
 }
