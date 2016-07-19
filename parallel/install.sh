@@ -13,7 +13,7 @@ mkdir lib
 cd lib
 
 # MPICH install on Raspberry PI 3
-if [ $2="--pi3"]; then
+if [ $1="--pi3" ]; then
     # We use MPICH because OpenMPI does not support ARMvl CPU architecture
     wget http://www.mpich.org/static/downloads/3.2/mpich-3.2.tar.gz
     tar -zxvf mpich-3.2.tar.gz
@@ -33,7 +33,7 @@ if [ $1="--boost" ]; then
     cd boost_1_61_0
     echo "using mpi ;" > user-config.jam
     sudo ./bootstrap.sh --prefix=/usr/local
-    sudo ./bjam --user-config=user-config.jam --with-mpi install
+    sudo ./bjam --user-config=user-config.jam install
     cd ..
 fi
 

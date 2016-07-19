@@ -1,10 +1,14 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
+#include <mutex>
 #include <iostream>
 
 namespace mpi = boost::mpi;
 
+std::mutex mtx;
+
 void helloMPI() {
+    std::lock_guard<std::mutex> lck(mtx);
     mpi::communicator world;
     std::cout << "I am process " << world.rank() << " of " << world.size()
               << "." << std::endl;
@@ -30,6 +34,6 @@ void synchronousPointToPontCommunication() {
 
 int main(int argc, char* argv[]) {
     mpi::environment env(argc, argv);
-    helloMPI();
+    synchronousPointToPontCommunication();
     return 0;
 }

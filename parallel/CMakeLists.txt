@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 
 PROJECT(Distributed)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+
 FIND_PACKAGE(MPI REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS mpi REQUIRED)
 # set(Boost_USE_STATIC_LIBS ON)
