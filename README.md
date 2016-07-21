@@ -1,4 +1,1 @@
-## distribbuted
-
-Actor pattern experiment
-
+#Distributed Message Passing System
