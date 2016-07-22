@@ -15,10 +15,8 @@ class ClusterBackend extends Actor with ActorLogging {
 
   // subscribe to cluster changes, re-subscribe when restart 
   override def preStart(): Unit = {
-    //#subscribe
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
-    //#subscribe
   }
 
   override def postStop(): Unit = cluster.unsubscribe(self)
@@ -26,11 +24,14 @@ class ClusterBackend extends Actor with ActorLogging {
   def receive = {
     case MemberUp(member) =>
       log.info("Member is Up: {}", member.address)
+
     case UnreachableMember(member) =>
       log.info("Member detected as unreachable: {}", member)
+
     case MemberRemoved(member, previousStatus) =>
       log.info("Member is Removed: {} after {}",
         member.address, previousStatus)
+
     case AddWorkers(incomingWorkers) =>
       if (workers + incomingWorkers < 0) {
         sender() ! IllegalWorkers(ClusterBackend.illegalWorkersString)
@@ -39,6 +40,7 @@ class ClusterBackend extends Actor with ActorLogging {
         sender() ! WorkersResult(workers)
       }
       log.info(s"Workers: $workers")
+
     case _: MemberEvent => // ignore
   }
 }
