@@ -4,6 +4,9 @@ import akka.actor.{ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
 
 object ClusterApp {
+
+  def clusterSystem = "ClusterSystem"
+
   def main(args: Array[String]): Unit = {
     if (args.isEmpty)
       startup(Seq("2551", "2552", "0"))
@@ -18,7 +21,7 @@ object ClusterApp {
         withFallback(ConfigFactory.load())
 
       // Create an Akka system
-      val system = ActorSystem("ClusterSystem", config)
+      val system = ActorSystem(ClusterApp.clusterSystem, config)
       // Create an actor that handles cluster domain events
       system.actorOf(Props[ClusterBackend], name = "clusterListener")
     }

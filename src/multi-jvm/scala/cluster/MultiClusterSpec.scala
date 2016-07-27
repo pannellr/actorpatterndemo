@@ -8,31 +8,23 @@ import akka.actor.Props
 import akka.remote.testkit.{MultiNodeConfig, MultiNodeSpec}
 import akka.testkit.ImplicitSender
 import com.typesafe.config.ConfigFactory
+import generated.models.Worker
 import org.scalatest.WordSpecLike
-import sample.cluster.multi.STMultiNodeSpec
 
 object MultiNodeClusterConfig extends MultiNodeConfig {
+  override val config = ConfigFactory.load()
+
   val first = role("first")
   val second = role("second")
   val third = role("third")
 
   def nodeList = Seq(first, second, third)
 
-  // Extract individual sigar library for every node.
+
   nodeList foreach { role ⇒
     nodeConfig(role) {
-      ConfigFactory.parseString(
-        s"""
-      akka.loglevel = INFO
-      akka.actor.provider = "akka.cluster.ClusterActorRefProvider"
-
-      akka.remote.log-remote-lifecycle-events = off
-      akka.cluster.roles = [node]
-
-      # Disable legacy metrics in akka-cluster.
-      akka.cluster.metrics.enabled=off
-      """)
-    }
+      config
+    } // Load config from the multi-jvm resources
   }
 }
 
@@ -48,8 +40,6 @@ class ClusterSpec extends MultiNodeSpec(MultiNodeClusterConfig)
   with WordSpecLike {
 
   import MultiNodeClusterConfig._
-
-  import scala.concurrent.duration._
 
   override def beforeAll() = multiNodeSpecBeforeAll()
 
@@ -67,10 +57,9 @@ class ClusterSpec extends MultiNodeSpec(MultiNodeClusterConfig)
       runOn(first) {
         enterBarrier("deployed")
         val secondNode = system.actorSelection(node(second) / "user" / "second")
-        within(500.millis) {
-          secondNode ! AddWorkers(1)
-          expectMsg(10.seconds, WorkersResult(1))
-        }
+
+        secondNode ! SetWorkers(Seq[Worker](new Worker()))
+        expectMsg(WorkersResult(1))
       }
 
       runOn(second) {
@@ -81,14 +70,11 @@ class ClusterSpec extends MultiNodeSpec(MultiNodeClusterConfig)
       runOn(third) {
         system.actorOf(Props[ClusterBackend], "third")
         enterBarrier("deployed")
-        val secondNode = system.actorSelection(node(second) / "user" / "second")
 
-        // Wait 200 millis so that we can wait for the first worker to send a message
-        Thread.sleep(200)
-        within(500.millis) {
-          secondNode ! AddWorkers(1)
-          expectMsg(10.seconds, WorkersResult(2))
-        }
+        val secondNode = system.actorSelection(node(second) / "user" / "second")
+        val twoWorkers = Seq[Worker](new Worker(), new Worker())
+        secondNode ! SetWorkers(twoWorkers)
+        expectMsg(WorkersResult(2))
       }
 
       enterBarrier("finished")

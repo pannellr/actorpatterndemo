@@ -32,13 +32,9 @@ class ClusterBackend extends Actor with ActorLogging {
       log.info("Member is Removed: {} after {}",
         member.address, previousStatus)
 
-    case AddWorkers(incomingWorkers) =>
-      if (workers + incomingWorkers < 0) {
-        sender() ! IllegalWorkers(ClusterBackend.illegalWorkersString)
-      } else {
-        workers += incomingWorkers
-        sender() ! WorkersResult(workers)
-      }
+    case SetWorkers(incomingWorkers) =>
+      workers = incomingWorkers.size
+      sender() ! WorkersResult(workers)
       log.info(s"Workers: $workers")
 
     case _: MemberEvent => // ignore

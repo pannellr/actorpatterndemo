@@ -4,12 +4,13 @@
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestActors, TestKit}
-import cluster.{AddWorkers, ClusterBackend, IllegalWorkers, WorkersResult}
+import cluster.{ClusterBackend, SetWorkers, WorkersResult}
+import generated.models.Worker
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 
 // Asynchronous testing
-class ClusterSpec() extends TestKit(ActorSystem("ClusterSpec"))
+class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterSpec"))
   with ImplicitSender
   with Matchers
   with WordSpecLike
@@ -32,20 +33,14 @@ class ClusterSpec() extends TestKit(ActorSystem("ClusterSpec"))
   // Note that in these unit tests, actors will just be sending messages to themselves
   "A ClusterBackend" must {
 
-    "update its worker count when it receives an AddWorkers message" in {
+    // TODO: Create a custom serializer because the default Java serializer is very slow
+    "update its worker count when it receives an SetWorkers message" in {
       val clusterBackend = system.actorOf(Props[ClusterBackend])
-
-      clusterBackend ! AddWorkers(1)
+      clusterBackend ! SetWorkers(Seq[Worker](new Worker()))
       expectMsg(WorkersResult(1))
 
-      clusterBackend ! AddWorkers(3)
-      expectMsg(WorkersResult(4))
-    }
-
-    "send an IllegalWorkers message when it has less than 0 workers" in {
-      val clusterBackend = system.actorOf(Props[ClusterBackend])
-      clusterBackend ! AddWorkers(-1)
-      expectMsg(IllegalWorkers(ClusterBackend.illegalWorkersString))
+      clusterBackend ! SetWorkers(Seq[Worker](new Worker(), new Worker(), new Worker()))
+      expectMsg(WorkersResult(3))
     }
 
   }

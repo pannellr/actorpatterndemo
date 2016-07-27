@@ -1,8 +1,8 @@
+package cluster
+
 /**
   * Created by Brian.Yip on 7/22/2016.
   */
-
-package sample.cluster.multi
 
 import akka.remote.testkit.MultiNodeSpecCallbacks
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
