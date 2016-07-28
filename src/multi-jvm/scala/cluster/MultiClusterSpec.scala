@@ -8,7 +8,7 @@ import akka.actor.Props
 import akka.remote.testkit.{MultiNodeConfig, MultiNodeSpec}
 import akka.testkit.ImplicitSender
 import com.typesafe.config.ConfigFactory
-import generated.models.Worker
+import generated.models.{SetWorkers, Worker, WorkersResult}
 import org.scalatest.WordSpecLike
 
 object MultiNodeClusterConfig extends MultiNodeConfig {
@@ -57,9 +57,9 @@ class ClusterSpec extends MultiNodeSpec(MultiNodeClusterConfig)
       runOn(first) {
         enterBarrier("deployed")
         val secondNode = system.actorSelection(node(second) / "user" / "second")
-
-        secondNode ! SetWorkers(Seq[Worker](new Worker()))
-        expectMsg(WorkersResult(1))
+        val oneWorker = Seq[Worker](new Worker())
+        secondNode ! SetWorkers(oneWorker)
+        expectMsg(WorkersResult(oneWorker))
       }
 
       runOn(second) {
@@ -74,7 +74,7 @@ class ClusterSpec extends MultiNodeSpec(MultiNodeClusterConfig)
         val secondNode = system.actorSelection(node(second) / "user" / "second")
         val twoWorkers = Seq[Worker](new Worker(), new Worker())
         secondNode ! SetWorkers(twoWorkers)
-        expectMsg(WorkersResult(2))
+        expectMsg(WorkersResult(twoWorkers))
       }
 
       enterBarrier("finished")

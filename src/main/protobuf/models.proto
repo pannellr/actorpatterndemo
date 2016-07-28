@@ -1,4 +1,4 @@
-syntax = "proto2";
+syntax = "proto3";
 
 // This is available because of the PB.protobufConfig on scalapb-runtime in build.sbt
 import "scalapb/scalapb.proto";
@@ -6,5 +6,13 @@ import "scalapb/scalapb.proto";
 package generated;
 
 message Worker {
-    // required string name = 1;
+    string name = 1;
+}
+
+message SetWorkers {
+    repeated Worker workers = 1;
+}
+
+message WorkersResult {
+    repeated Worker workers = 1;
 }

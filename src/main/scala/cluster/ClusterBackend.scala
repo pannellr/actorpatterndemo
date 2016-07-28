@@ -3,6 +3,7 @@ package cluster
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
+import generated.models.{SetWorkers, Worker, WorkersResult}
 
 object ClusterBackend {
   val illegalWorkersString = "Cannot have less than 0 workers!"
@@ -11,7 +12,7 @@ object ClusterBackend {
 class ClusterBackend extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
-  var workers: Int = 0
+  var workers: Seq[Worker] = Seq[Worker]()
 
   // subscribe to cluster changes, re-subscribe when restart 
   override def preStart(): Unit = {
@@ -33,7 +34,7 @@ class ClusterBackend extends Actor with ActorLogging {
         member.address, previousStatus)
 
     case SetWorkers(incomingWorkers) =>
-      workers = incomingWorkers.size
+      workers = incomingWorkers
       sender() ! WorkersResult(workers)
       log.info(s"Workers: $workers")
 

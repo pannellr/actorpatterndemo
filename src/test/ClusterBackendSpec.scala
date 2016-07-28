@@ -4,8 +4,8 @@
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestActors, TestKit}
-import cluster.{ClusterBackend, SetWorkers, WorkersResult}
-import generated.models.Worker
+import cluster.ClusterBackend
+import generated.models.{SetWorkers, Worker, WorkersResult}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 
@@ -36,11 +36,13 @@ class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterBackendSpec"))
     // TODO: Create a custom serializer because the default Java serializer is very slow
     "update its worker count when it receives an SetWorkers message" in {
       val clusterBackend = system.actorOf(Props[ClusterBackend])
-      clusterBackend ! SetWorkers(Seq[Worker](new Worker()))
-      expectMsg(WorkersResult(1))
+      val oneWorker = Seq[Worker](new Worker("Alice"))
+      clusterBackend ! SetWorkers(oneWorker)
+      expectMsg(WorkersResult(oneWorker))
 
-      clusterBackend ! SetWorkers(Seq[Worker](new Worker(), new Worker(), new Worker()))
-      expectMsg(WorkersResult(3))
+      val threeWorkers = Seq[Worker](new Worker("Alice"), new Worker("Bob"), new Worker("Charlie"))
+      clusterBackend ! SetWorkers(threeWorkers)
+      expectMsg(WorkersResult(threeWorkers))
     }
 
   }
