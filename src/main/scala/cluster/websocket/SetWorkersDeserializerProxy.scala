@@ -1,0 +1,38 @@
+package cluster.websocket
+
+import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.stream.ActorMaterializer
+import akka.util.ByteString
+import com.google.protobuf.InvalidProtocolBufferException
+import generated.models.SetWorkers
+
+
+/**
+  * Created by Brian.Yip on 7/28/2016.
+  */
+class SetWorkersDeserializerProxy(actorRef: ActorRef) extends Actor with ActorLogging {
+
+  implicit val materializer = ActorMaterializer()
+
+  override def receive: Receive = {
+    case serializedByteString: ByteString => deserializeByteString(serializedByteString)
+    case _ => sender ! SetWorkersDeserializerProxy.noSerializedByteStringReply
+  }
+
+  def deserializeByteString(byteString: ByteString): Unit = {
+    try {
+      val setWorkersMessage = SetWorkers.parseFrom(byteString.toArray)
+      actorRef ! setWorkersMessage
+    } catch {
+      case invalidProtocolException: InvalidProtocolBufferException =>
+        log.info(SetWorkersDeserializerProxy.invalidSetWorkersMessage)
+        sender ! SetWorkersDeserializerProxy.invalidProtocolBufferExceptionReply
+    }
+  }
+}
+
+object SetWorkersDeserializerProxy {
+  val invalidProtocolBufferExceptionReply = s"Expected a ${SetWorkers.getClass.getName} message"
+  val noSerializedByteStringReply = s"Expected a ${ByteString.getClass.getName}"
+  val invalidSetWorkersMessage = s"Received an invalid SetWorkersMessage"
+}

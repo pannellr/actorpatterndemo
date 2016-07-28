@@ -1,10 +1,11 @@
+package cluster
+
 /**
   * Created by Brian.Yip on 7/21/2016.
   */
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestActors, TestKit}
-import cluster.ClusterBackend
 import generated.models.{SetWorkers, Worker, WorkersResult}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
@@ -33,8 +34,7 @@ class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterBackendSpec"))
   // Note that in these unit tests, actors will just be sending messages to themselves
   "A ClusterBackend" must {
 
-    // TODO: Create a custom serializer because the default Java serializer is very slow
-    "update its worker count when it receives an SetWorkers message" in {
+    "update its workers when it receives an SetWorkers message" in {
       val clusterBackend = system.actorOf(Props[ClusterBackend])
       val oneWorker = Seq[Worker](new Worker("Alice"))
       clusterBackend ! SetWorkers(oneWorker)
