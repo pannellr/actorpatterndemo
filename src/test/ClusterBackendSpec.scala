@@ -10,7 +10,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 
 // Asynchronous testing
-class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterSpec"))
+class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterBackendSpec"))
   with ImplicitSender
   with Matchers
   with WordSpecLike
