@@ -11,8 +11,18 @@ message Worker {
 
 message MoveWorkers {
     repeated Worker workers = 1;
-    string destinationActorName = 2;
-    string sourceActorName = 3;
+    string destinationActorPath = 2;
+    string sourceActorPath = 3;
+}
+
+message MoveWorkersSuccess {
+    string messageDescription = 1;
+    Status status = 2;
+
+    enum Status {
+        OK = 0;
+        FAIL = 1;
+    }
 }
 
 message WorkersResult {

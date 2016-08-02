@@ -2,25 +2,51 @@ package cluster.websocket
 
 import akka.actor.ActorLogging
 import akka.stream.actor.ActorPublisher
-import generated.models.MoveWorkers
+import generated.models.{MoveWorkers, MoveWorkersSuccess}
 
 /**
   * Created by Brian.Yip on 7/29/2016.
   */
-class MessagePublisher extends ActorPublisher[String] with ActorLogging {
+
+object MessagePublisher {
+  val missingDestinationActorMessage = "Please specify a destination actor name"
+  val missingSourceActorMessage = "Please specify a source actor name"
+}
+
+class MessagePublisher extends ActorPublisher[MoveWorkersSuccess] with ActorLogging {
 
   override def receive: Receive = {
-    case setWorkers: MoveWorkers =>
+    case moveWorkers: MoveWorkers =>
+      if (canPublish)
+        handleMoveWorkers(moveWorkers)
+    case moveWorkersSuccess: MoveWorkersSuccess =>
       if (canPublish) {
-        log.info(s"Got a ${MoveWorkers.getClass.getName} message: ${setWorkers.toString}")
-
-        // Find the name of the destination actor node
-        // Go update the workers on the destination node
-        onNext("FooBar")
+        onNext(moveWorkersSuccess)
       }
     case _ =>
       log.info(WorkersFlow.unsupportedMessageType)
   }
+
+
+  def handleMoveWorkers(moveWorkersMessage: MoveWorkers): Unit = {
+    log.info(s"Got a ${MoveWorkers.getClass.getName} message: ${moveWorkersMessage.toString}")
+
+    if (!moveWorkersMessage.destinationActorPath.isEmpty && !moveWorkersMessage.sourceActorPath.isEmpty) {
+      proxyMessageToClusterBackend(moveWorkersMessage)
+      return
+    }
+
+    if (moveWorkersMessage.destinationActorPath.isEmpty)
+      onNext(MoveWorkersSuccess(MessagePublisher.missingDestinationActorMessage, MoveWorkersSuccess.Status.FAIL))
+    if (moveWorkersMessage.sourceActorPath.isEmpty)
+      onNext(MoveWorkersSuccess(MessagePublisher.missingSourceActorMessage, MoveWorkersSuccess.Status.FAIL))
+  }
+
+  private def proxyMessageToClusterBackend(moveWorkersMessage: MoveWorkers): Unit = {
+    val destinationRef = context.system.actorSelection(moveWorkersMessage.destinationActorPath)
+    destinationRef ! moveWorkersMessage
+  }
+
 
   private def canPublish: Boolean = isActive && totalDemand > 0
 }
