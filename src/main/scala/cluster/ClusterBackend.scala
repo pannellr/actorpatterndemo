@@ -3,7 +3,7 @@ package cluster
 import akka.actor.{Actor, ActorLogging}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
-import generated.models.{SetWorkers, Worker, WorkersResult}
+import generated.models.{MoveWorkers, Worker, WorkersResult}
 
 object ClusterBackend {
   val illegalWorkersString = "Cannot have less than 0 workers!"
@@ -33,7 +33,7 @@ class ClusterBackend extends Actor with ActorLogging {
       log.info("Member is Removed: {} after {}",
         member.address, previousStatus)
 
-    case SetWorkers(incomingWorkers) =>
+    case MoveWorkers(incomingWorkers, destinationActorName, sourceActorName) =>
       workers = incomingWorkers
       sender() ! WorkersResult(workers)
       log.info(s"Workers: $workers")

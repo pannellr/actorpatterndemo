@@ -1,9 +1,8 @@
 package cluster.websocket
 
 import akka.actor.ActorLogging
-import akka.http.scaladsl.model.ws.TextMessage
 import akka.stream.actor.ActorPublisher
-import generated.models.SetWorkers
+import generated.models.MoveWorkers
 
 /**
   * Created by Brian.Yip on 7/29/2016.
@@ -11,15 +10,12 @@ import generated.models.SetWorkers
 class MessagePublisher extends ActorPublisher[String] with ActorLogging {
 
   override def receive: Receive = {
-    case TextMessage.Strict(text) =>
-      // Only publish when we get a message
+    case setWorkers: MoveWorkers =>
       if (canPublish) {
-        log.info(s"Got text: $text")
-        onNext(s"Message published: $text")
-      }
-    case setWorkers: SetWorkers =>
-      if (canPublish) {
-        log.info(s"Got a ${SetWorkers.getClass.getName} message")
+        log.info(s"Got a ${MoveWorkers.getClass.getName} message: ${setWorkers.toString}")
+
+        // Find the name of the destination actor node
+        // Go update the workers on the destination node
         onNext("FooBar")
       }
     case _ =>

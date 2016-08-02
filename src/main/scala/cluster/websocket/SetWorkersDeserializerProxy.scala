@@ -3,7 +3,7 @@ package cluster.websocket
 import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.util.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
-import generated.models.SetWorkers
+import generated.models.MoveWorkers
 
 
 /**
@@ -18,7 +18,7 @@ class SetWorkersDeserializerProxy(actorRef: ActorRef) extends Actor with ActorLo
 
   def deserializeByteString(byteString: ByteString): Unit = {
     try {
-      val setWorkersMessage = SetWorkers.parseFrom(byteString.toArray)
+      val setWorkersMessage = MoveWorkers.parseFrom(byteString.toArray)
       actorRef ! setWorkersMessage
     } catch {
       case invalidProtocolException: InvalidProtocolBufferException =>
@@ -29,7 +29,7 @@ class SetWorkersDeserializerProxy(actorRef: ActorRef) extends Actor with ActorLo
 }
 
 object SetWorkersDeserializerProxy {
-  val invalidProtocolBufferExceptionReply = s"Expected a ${SetWorkers.getClass.getName} message"
+  val invalidProtocolBufferExceptionReply = s"Expected a ${MoveWorkers.getClass.getName} message"
   val noSerializedByteStringReply = s"Expected a ${ByteString.getClass.getName}"
   val invalidSetWorkersMessage = s"Received an invalid SetWorkersMessage"
 }

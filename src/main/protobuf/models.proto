@@ -9,8 +9,10 @@ message Worker {
     string name = 1;
 }
 
-message SetWorkers {
+message MoveWorkers {
     repeated Worker workers = 1;
+    string destinationActorName = 2;
+    string sourceActorName = 3;
 }
 
 message WorkersResult {

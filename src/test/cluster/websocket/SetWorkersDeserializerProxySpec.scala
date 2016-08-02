@@ -7,7 +7,7 @@ package cluster.websocket
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit, TestProbe}
 import akka.util.ByteString
-import generated.models.{SetWorkers, Worker}
+import generated.models.{MoveWorkers, Worker}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -27,20 +27,20 @@ class SetWorkersDeserializerProxySpec extends TestKit(ActorSystem("ClusterBacken
     val testProbe = TestProbe()
     val setWorkersDeserializerProxy = system.actorOf(Props(new SetWorkersDeserializerProxy(testProbe.ref)))
 
-    "deserialize SetWorkers messages and proxy them" in {
-      val setWorkersMessage = SetWorkers(Seq[Worker](Worker("Alice")))
-      val binaryByteString = ByteString(SetWorkers.toByteArray(setWorkersMessage))
+    "deserialize MoveWorkers messages and proxy them" in {
+      val setWorkersMessage = MoveWorkers(Seq[Worker](Worker("Alice")))
+      val binaryByteString = ByteString(MoveWorkers.toByteArray(setWorkersMessage))
 
       setWorkersDeserializerProxy ! binaryByteString
-      testProbe.expectMsg(50.millis, setWorkersMessage)
+      testProbe.expectMsg(200.millis, setWorkersMessage)
     }
 
-    "not reply when the serialized data does not represent a SetWorkers message" in {
+    "not reply when the serialized data does not represent a MoveWorkers message" in {
       val notASetWorkersMessage = "notasetworkersmessaege"
       val binaryByteString = ByteString(notASetWorkersMessage)
 
       setWorkersDeserializerProxy ! binaryByteString
-      testProbe.expectNoMsg(50.millis)
+      testProbe.expectNoMsg(200.millis)
       expectMsg(SetWorkersDeserializerProxy.invalidProtocolBufferExceptionReply)
     }
 
