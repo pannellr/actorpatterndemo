@@ -1,7 +1,6 @@
 package cluster.websocket
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
-import akka.stream.ActorMaterializer
 import akka.util.ByteString
 import com.google.protobuf.InvalidProtocolBufferException
 import generated.models.SetWorkers
@@ -11,8 +10,6 @@ import generated.models.SetWorkers
   * Created by Brian.Yip on 7/28/2016.
   */
 class SetWorkersDeserializerProxy(actorRef: ActorRef) extends Actor with ActorLogging {
-
-  implicit val materializer = ActorMaterializer()
 
   override def receive: Receive = {
     case serializedByteString: ByteString => deserializeByteString(serializedByteString)
