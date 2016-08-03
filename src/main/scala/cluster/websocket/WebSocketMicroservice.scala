@@ -70,6 +70,7 @@ trait WorkersFlow {
           }
         )
 
+        // TODO: Send back a MoveWorkersSuccess back to the client instead of a TextMessage
         // This will emit any updates back to the client as text messages
         val updatesPublisher = Source.fromPublisher(messagePublisher)
           .map(messageAsString => TextMessage(messageAsString))

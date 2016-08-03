@@ -69,10 +69,10 @@ class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
 
       val probe = TestProbe()
       val dummyWorkers = Seq[Worker](new Worker("Alice"), new Worker("Bob"))
-      val destinationPath = probe.ref.path.toString
-      val sourceActorName = "Not used"
+      val destinationActorPath = probe.ref.path.toString
+      val sourceActorPath = "Not used"
 
-      val moveWorkersMessage = MoveWorkers(dummyWorkers, destinationPath, sourceActorName)
+      val moveWorkersMessage = MoveWorkers(dummyWorkers, destinationActorPath, sourceActorPath)
       messagePublisherRef ! moveWorkersMessage
 
       probe.expectMsg(200.millis, moveWorkersMessage)

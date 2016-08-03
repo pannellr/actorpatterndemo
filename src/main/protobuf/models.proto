@@ -9,6 +9,14 @@ message Worker {
     string name = 1;
 }
 
+message AddWorkers {
+    repeated Worker workers = 1;
+}
+
+message RemoveWorkers {
+    uint32 workers = 1;
+}
+
 message MoveWorkers {
     repeated Worker workers = 1;
     string destinationActorPath = 2;
@@ -27,4 +35,8 @@ message MoveWorkersSuccess {
 
 message WorkersResult {
     repeated Worker workers = 1;
+}
+
+message StartAddWorkers {
+
 }
