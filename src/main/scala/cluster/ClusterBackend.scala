@@ -29,6 +29,7 @@ class ClusterBackend extends Actor with ActorLogging {
     incomingWorkers.foreach {
       worker => workers += worker
     }
+    // Pipe this to a web socket
     sender() ! WorkersResult(workers)
   }
 

@@ -37,6 +37,10 @@ message WorkersResult {
     repeated Worker workers = 1;
 }
 
-message StartAddWorkers {
+message StartAddingWorkers {
+    uint32 workers = 1;
+}
+
+message StopAddingWorkers {
 
 }

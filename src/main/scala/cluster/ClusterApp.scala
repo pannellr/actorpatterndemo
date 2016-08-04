@@ -2,6 +2,7 @@ package cluster
 
 import akka.actor.{ActorSystem, Props}
 import com.typesafe.config.ConfigFactory
+import generated.models.StartAddingWorkers
 
 object ClusterApp {
 
@@ -16,14 +17,15 @@ object ClusterApp {
 
   def startup(ports: Seq[String]): Unit = {
     ports foreach { port =>
-      // Override the configuration of the port
       val config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port).
         withFallback(ConfigFactory.load())
 
-      // Create an Akka system
       val system = ActorSystem(ClusterApp.clusterSystem, config)
-      // Create an actor that handles cluster domain events
-      system.actorOf(Props[ClusterBackend], name = "clusterListener")
+
+      val children = 3
+      val workersToAdd = 1
+      val master = system.actorOf(Props(new Master(children)), name = "Master")
+      master ! StartAddingWorkers(workersToAdd)
     }
   }
 
