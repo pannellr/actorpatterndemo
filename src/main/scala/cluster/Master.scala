@@ -16,11 +16,10 @@ import scala.util.Random
 class Master(children: Int) extends Actor with ActorLogging {
 
   val scheduler = context.system.scheduler
-  var cancellableTask: Cancellable = scheduler.schedule(1.second, 1.second, self, "Waiting for task...")
-
   val random = Random.alphanumeric
   val childNodes = scala.collection.mutable.HashMap[Int, ActorRef]()
   val cluster = Cluster(context.system)
+  var cancellableTask: Cancellable = scheduler.schedule(1.second, 1.second, self, "Waiting for task...")
   var childIndex = 0
 
   override def preStart(): Unit = {
@@ -28,6 +27,12 @@ class Master(children: Int) extends Actor with ActorLogging {
       classOf[MemberEvent], classOf[UnreachableMember])
 
     initializeChildren()
+  }
+
+  def initializeChildren(): Unit = {
+    for (i <- 1 to children) {
+      childNodes += (i -> context.actorOf(Props[ClusterBackend], s"${Master.childNodeName}$i"))
+    }
   }
 
   override def receive: Receive = {
@@ -90,14 +95,9 @@ class Master(children: Int) extends Actor with ActorLogging {
     }
     workerName
   }
-
-  def initializeChildren(): Unit = {
-    for (i <- 1 to children) {
-      childNodes += (i -> context.actorOf(Props[ClusterBackend], s"${Master.childNodeName}$i"))
-    }
-  }
 }
 
 object Master {
+  def masterNodeName = "Master"
   def childNodeName = "PiNode"
 }

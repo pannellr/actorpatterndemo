@@ -1,11 +1,14 @@
-package cluster
+package cluster.http
 
-import akka.actor.{Actor, ActorLogging, ActorSystem}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, UnreachableMember}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.StandardRoute
+import akka.pattern.ask
 import akka.stream.ActorMaterializer
+import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
@@ -16,54 +19,45 @@ import scala.io.StdIn
   * Created by Brian.Yip on 8/19/2016.
   */
 
-// The only reason this is a trait is to that it can be tested
-trait HttpService {
+object HttpService {
   val greeting = "Welcome to the HTTP microservice"
   val echoMessage = "Echo endpoint was hit!"
   val workersExchangeMessage = "Workers exchange endpoint was hit!"
+
+  // Wait 2 seconds before deciding that there is no service to handle web sockets
+  val workersExchangeTimeoutDuration = 2.seconds
+}
+
+trait HttpService {
+
   val route = {
     get {
       pathEndOrSingleSlash {
-        complete(greeting)
+        complete(HttpService.greeting)
       }
     } ~
       pathPrefix("ws") {
         path("echo") {
-          complete(echoMessage)
+          complete(HttpService.echoMessage)
           //        //          handleWebSocketMessages(echoService)
         } ~
           path("workers-exchange") {
             parameters('nodeId) { (nodeId) =>
-
-
-              // Find an existing actorRef
-              // If the actorRef was found, let the actorRef handle the connections
-              // If the actorRef was not found, then establish the route here
-              // Return a route via handleWebSocketMessages in a separate class
-
-
-              //          complete {
-              //            example(nodeId)
-              //          }
-              //              handleWebSocketMessages(echoService)
-              complete(nodeId)
+              workersExchangeRoute(nodeId)
             }
           }
       }
   }
 
-  implicit def executor: ExecutionContextExecutor
+  /**
+    * Returns a route where a connection is established between a WebSocket client and a Cluster Backend
+    *
+    * @param nodeId The id of the node we wish to monitor
+    * @return
+    */
+  def workersExchangeRoute(nodeId: String): StandardRoute
 
-  //  def makeConnectionWithPiNode(nodeId: String): Future[ToResponseMarshallable] = {
-  //    val piNodePath = Master.childNodeName + nodeId
-  //    val actorRefFuture = context.actorSelection(s"$piNodePath").resolveOne()
-  //
-  //    actorRefFuture.andThen {
-  //      case Success(actor) => actor ! "Cool!"
-  //      case Failure(exception) => log.info(s"Exception happened: $exception")
-  //    }
-  //
-  //  }
+  implicit def executor: ExecutionContextExecutor
 
   def example(nodeId: String): Future[String] = {
     val myFuture = Future[String] {
@@ -77,9 +71,10 @@ trait HttpService {
 }
 
 class HttpRouter extends Actor with ActorLogging with HttpService {
-  val config = ConfigFactory.load()
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
+
+  val config = ConfigFactory.load()
   val interface = config.getString("http.interface")
   val port = config.getInt("http.port")
   val cluster = Cluster(context.system)
@@ -99,6 +94,18 @@ class HttpRouter extends Actor with ActorLogging with HttpService {
     cluster.unsubscribe(self)
   }
 
+  /**
+    * Returns a route where a connection is established between a WebSocket client and a Cluster Backend
+    *
+    * @param nodeId The id of the node we wish to monitor
+    * @return
+    */
+  override def workersExchangeRoute(nodeId: String): StandardRoute = {
+    val workersExchangeHandler = context.actorOf(Props[WorkersExchangeHandler])
+    implicit val timeout = Timeout(HttpService.workersExchangeTimeoutDuration)
+    val future = workersExchangeHandler ? nodeId
+    Await.result(future, timeout.duration).asInstanceOf[StandardRoute]
+  }
 
   def serveRoutes() = {
     Http().bindAndHandle(route, interface, port)

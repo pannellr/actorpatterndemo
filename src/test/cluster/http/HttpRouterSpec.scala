@@ -1,5 +1,7 @@
-package cluster
+package cluster.http
 
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.StandardRoute
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -8,15 +10,19 @@ import org.scalatest.{FlatSpec, Matchers}
   */
 class HttpRouterSpec extends FlatSpec with Matchers with ScalatestRouteTest with HttpService {
 
+  override def workersExchangeRoute(nodeId: String): StandardRoute = {
+    complete(nodeId)
+  }
+
   "HttpRouter" should "respond to the default route" in {
     Get() ~> route ~> check {
-      responseAs[String] shouldBe greeting
+      responseAs[String] shouldBe HttpService.greeting
     }
   }
 
   it should "send an echo reply back" in {
     Get("/ws/echo") ~> route ~> check {
-      responseAs[String] shouldBe echoMessage
+      responseAs[String] shouldBe HttpService.echoMessage
     }
   }
 

@@ -1,6 +1,7 @@
 package cluster
 
 import akka.actor.{ActorSystem, Props}
+import cluster.http.HttpRouter
 import com.typesafe.config.ConfigFactory
 import generated.models.{StartAddingWorkers, Worker}
 
