@@ -5,11 +5,9 @@ package cluster
   */
 
 import akka.actor.{ActorSystem, Props}
-import akka.testkit.{ImplicitSender, TestActors, TestKit}
+import akka.testkit.{ImplicitSender, TestActorRef, TestActors, TestKit}
 import generated.models._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
-
-import scala.concurrent.duration._
 
 
 // Asynchronous testing
@@ -37,32 +35,33 @@ class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterBackendSpec"))
   "A ClusterBackend" must {
 
     "append a new worker when it receives an AddWorkers message" in {
-      val clusterBackend = system.actorOf(Props[ClusterBackend])
+      val clusterBackend = TestActorRef(new ClusterBackend())
       val workers = Seq[Worker](new Worker("Tim"), new Worker("Jim"))
       val addWorkersMessage = AddWorkers(workers)
 
       clusterBackend ! addWorkersMessage
-      expectMsg(200.millis, WorkersResult(workers))
+      clusterBackend.underlyingActor.workers shouldBe workers
 
       val nextWorkers = Seq[Worker](new Worker("Tom"), new Worker("Jerry"))
       val nextAddWorkersMessage = AddWorkers(nextWorkers)
       val expectedWorkers: Seq[Worker] = workers ++ nextWorkers
 
       clusterBackend ! nextAddWorkersMessage
-      expectMsg(200.millis, WorkersResult(expectedWorkers))
+      clusterBackend.underlyingActor.workers shouldBe expectedWorkers
     }
 
     "remove workers when it receives a RemoveWorkers message" in {
-      val clusterBackend = system.actorOf(Props[ClusterBackend])
+      val clusterBackend = TestActorRef(new ClusterBackend())
       val workers = Seq[Worker](new Worker("Tim"), new Worker("Jim"), new Worker("Bob"))
+
+      clusterBackend ! AddWorkers(workers)
+      clusterBackend.underlyingActor.workers shouldBe workers
+
       val removeWorkersMessage = RemoveWorkers(2)
       val expectedWorkers = Seq[Worker](new Worker("Bob"))
 
-      clusterBackend ! AddWorkers(workers)
-      expectMsg(200.millis, WorkersResult(workers))
-
       clusterBackend ! removeWorkersMessage
-      expectMsg(200.millis, WorkersResult(expectedWorkers))
+      clusterBackend.underlyingActor.workers shouldBe expectedWorkers
     }
 
     "update its workers when it receives an MoveWorkers message" in {

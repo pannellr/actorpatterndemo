@@ -44,3 +44,7 @@ message StartAddingWorkers {
 message StopAddingWorkers {
 
 }
+
+message MakeWebSocketConnection {
+
+}

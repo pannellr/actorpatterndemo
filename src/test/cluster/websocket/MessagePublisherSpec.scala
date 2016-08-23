@@ -51,8 +51,8 @@ class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
       MoveWorkersSuccess(MessagePublisher.missingDestinationActorMessage, MoveWorkersSuccess.Status.FAIL)
       val secondExpectedMessage =
         MoveWorkersSuccess(MessagePublisher.missingSourceActorMessage, MoveWorkersSuccess.Status.FAIL)
-      subscription.expectNext(200.millis, firstExpectedMessage)
-      subscription.expectNext(200.millis, secondExpectedMessage)
+      subscription.expectNext(500.millis, firstExpectedMessage)
+      subscription.expectNext(500.millis, secondExpectedMessage)
     }
 
     "accept MoveWorkersSuccess messages" in {
@@ -61,7 +61,7 @@ class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
       val workersSuccessMessage = MoveWorkersSuccess("OK", MoveWorkersSuccess.Status.OK)
       messagePublisherRef ! workersSuccessMessage
 
-      subscription.expectNext(200.millis, workersSuccessMessage)
+      subscription.expectNext(500.millis, workersSuccessMessage)
     }
 
     "proxy MoveWorkers messages to a destination actor" in {
@@ -75,7 +75,7 @@ class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
       val moveWorkersMessage = MoveWorkers(dummyWorkers, destinationActorPath, sourceActorPath)
       messagePublisherRef ! moveWorkersMessage
 
-      probe.expectMsg(200.millis, moveWorkersMessage)
+      probe.expectMsg(500.millis, moveWorkersMessage)
     }
 
     "not accept any other kind of message" in {
@@ -84,7 +84,7 @@ class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
       val textMessage = TextMessage("I do not expect a reply")
       messagePublisherRef ! textMessage
 
-      subscription.expectNoMsg(200.millis)
+      subscription.expectNoMsg(500.millis)
     }
 
   }

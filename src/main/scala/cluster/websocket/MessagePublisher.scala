@@ -2,6 +2,7 @@ package cluster.websocket
 
 import akka.actor.ActorLogging
 import akka.stream.actor.ActorPublisher
+import cluster.WorkersFlow
 import generated.models.{MoveWorkers, MoveWorkersSuccess}
 
 /**

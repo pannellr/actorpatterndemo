@@ -1,35 +1,17 @@
 package cluster.websocket
 
-/**
-  * Created by Brian.Yip on 7/26/2016.
-  */
-
-import akka.actor.{ActorSystem, Props}
-import akka.event.Logging
-import akka.http.scaladsl.Http
+import akka.actor.ActorRef
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
-import akka.http.scaladsl.server.Directives._
-import akka.stream._
+import akka.stream.FlowShape
 import akka.stream.actor.ActorPublisher
 import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Source}
 import akka.util.ByteString
-import com.typesafe.config.ConfigFactory
-import generated.models.Worker
+import cluster.WorkersFlow
 
-import scala.io.StdIn
-
-object WorkersFlow {
-  val unsupportedMessageType = "Message type not supported"
-}
-
-trait WorkersFlow {
-  type Workers = Seq[Worker]
-  type WorkersFilter = Workers => Boolean
-
-  val config = ConfigFactory.load("simpleHTTP")
-  implicit val system = ActorSystem("SimpleHTTP", config)
-  implicit val executor = system.dispatcher
-  implicit val materializer = ActorMaterializer()
+/**
+  * Created by Brian.Yip on 8/22/2016.
+  */
+trait WebSocketFlow {
 
   // val setWorkersDeserializer = system.actorOf(Props[SetWorkersDeserializerProxy])
 
@@ -46,10 +28,9 @@ trait WorkersFlow {
     case _ => TextMessage(WorkersFlow.unsupportedMessageType)
   }
 
-
-  // TODO: This should eventually be context.actorOf
-  private val messagePublisherRef = system.actorOf(Props[MessagePublisher], "MessagePublisher")
-  private val messagePublisher = ActorPublisher[String](messagePublisherRef)
+  //  val messagePublisherRef = context.actorOf(Props[MessagePublisher], "MessagePublisher")
+  val messagePublisherRef: ActorRef
+  val messagePublisher = ActorPublisher[String](messagePublisherRef)
 
   val webSocketFlow: Flow[Message, Message, _] =
     Flow.fromGraph(
@@ -60,7 +41,7 @@ trait WorkersFlow {
         val fromWebSocket = builder.add(
           Flow[Message].collect {
             case TextMessage.Strict(text) =>
-              // Let's let the message publisher know that an update has occurred
+              // Let the message publisher know that an update has occurred
               messagePublisherRef ! TextMessage(text)
 
               // Let the client know that we are alive and what we are up to.
@@ -100,37 +81,4 @@ trait WorkersFlow {
         FlowShape(fromWebSocket.in, toWebSocket.out)
       }
     )
-}
-
-object WebSocketMicroservice extends App with WorkersFlow {
-
-  val logger = Logging(system, getClass)
-  val interface = config.getString("http.interface")
-  val port = config.getInt("http.port")
-
-  // Configure HTTP routes
-  val route = {
-    get {
-      pathEndOrSingleSlash {
-        complete("Welcome to the HTTP microservice")
-      }
-    }
-
-    // WebSocket endpoints
-    pathPrefix("ws") {
-      path("echo") {
-        handleWebSocketMessages(echoService)
-      } ~
-        path("workers-exchange") {
-          get {
-            handleWebSocketMessages(webSocketFlow)
-          }
-        }
-    }
-  }
-  val serverBinding = Http().bindAndHandle(route, interface, port)
-  logger.info(s"HTTP server listening on $interface:$port")
-
-  // Serve indefinitely
-  StdIn.readLine()
 }
