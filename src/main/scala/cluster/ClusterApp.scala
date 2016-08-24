@@ -22,9 +22,9 @@ object ClusterApp extends App {
     val children = 3
     val workersToAdd = 1
     val master = system.actorOf(Props(new Master(children)), name = "Master")
-    master ! StartAddingWorkers(workersToAdd)
-
     system.actorOf(Props[HttpRouter], name = "HttpRouter")
+
+    master ! StartAddingWorkers(workersToAdd)
   }
 
   startup()

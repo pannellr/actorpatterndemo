@@ -1,12 +1,11 @@
 package cluster.http
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
-import akka.cluster.Cluster
-import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, UnreachableMember}
+import akka.actor.{ActorContext, ActorRef}
+import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.StandardRoute
+import akka.http.scaladsl.server.Route
+import akka.stream.scaladsl.Flow
 import akka.util.Timeout
-import cluster.{ClusterBackend, Master}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -20,44 +19,35 @@ object WorkersExchangeHandler {
   val actorPathResolutionTimeout = 2.seconds
 }
 
-class WorkersExchangeHandler extends Actor with ActorLogging {
+trait WorkersExchangeHandler {
 
-  val cluster = Cluster(context.system)
+  val context: ActorContext
 
-  override def preStart(): Unit = {
-    cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
-      classOf[MemberEvent], classOf[UnreachableMember])
-  }
+  /**
+    * The WebSocket flow function to exchange data between cluster and client
+    *
+    * @return
+    */
+  def webSocketHandler(): Flow[Message, Message, _]
 
-  override def postStop(): Unit = {
-    cluster.unsubscribe(self)
-  }
-
-  override def receive: Receive = {
-    case nodeId: String =>
-      val piNodePublisherActorRefPath =
-        s"/${Master.masterNodeName}/${Master.childNodeName}$nodeId/${ClusterBackend.stringPublisherRelativeActorPath}"
-      establishConnectionWithPiNode(piNodePublisherActorRefPath)
-  }
-
-  def establishConnectionWithPiNode(piNodePath: String): Future[StandardRoute] = {
+  def establishConnectionWithPiNode(piNodePath: String): Future[Route] = {
     implicit val timeout = Timeout(HttpService.workersExchangeTimeoutDuration)
-    val standardRoutePromise = Promise[StandardRoute]
-    val standardRouteFuture = standardRoutePromise.future
-    resolveActorPath(piNodePath, standardRoutePromise)
+    val routePromise = Promise[Route]
+    val routeFuture = routePromise.future
+    resolveActorPath(piNodePath, routePromise)
 
-    standardRouteFuture.andThen {
+    routeFuture.andThen {
       case Success(route) => route
       case Failure(ex) => complete(ex)
     }
-    standardRouteFuture
+    routeFuture
   }
 
-  def resolveActorPath(actorPath: String, standardRoutePromise: Promise[StandardRoute]): Future[ActorRef] = {
+  def resolveActorPath(actorPath: String, routePromise: Promise[Route]): Future[ActorRef] = {
     implicit val timeout = Timeout(WorkersExchangeHandler.actorPathResolutionTimeout)
     context.actorSelection(actorPath).resolveOne().andThen {
-      case Success(actor) => standardRoutePromise.success(complete(actor.path.toString))
-      case Failure(ex) => standardRoutePromise.failure(ex)
+      case Success(actor) => routePromise.success(handleWebSocketMessages(webSocketHandler()))
+      case Failure(ex) => routePromise.failure(ex)
     }
   }
 

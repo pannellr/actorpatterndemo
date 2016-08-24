@@ -1,14 +1,15 @@
 package cluster.http
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorSystem}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, UnreachableMember}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.StandardRoute
-import akka.pattern.ask
+import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import akka.util.Timeout
+import akka.stream.scaladsl.Flow
+import cluster.{ClusterBackend, Master, WorkersFlow}
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
@@ -39,7 +40,7 @@ trait HttpService {
       pathPrefix("ws") {
         path("echo") {
           complete(HttpService.echoMessage)
-          //        //          handleWebSocketMessages(echoService)
+          //                            handleWebSocketMessages(echoService)
         } ~
           path("workers-exchange") {
             parameters('nodeId) { (nodeId) =>
@@ -57,10 +58,10 @@ trait HttpService {
     * @param nodeId The id of the node we wish to monitor
     * @return
     */
-  def workersExchangeRoute(nodeId: String): StandardRoute
+  def workersExchangeRoute(nodeId: String): Route
 }
 
-class HttpRouter extends Actor with ActorLogging with HttpService {
+class HttpRouter extends Actor with ActorLogging with HttpService with WorkersExchangeHandler {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
@@ -85,16 +86,30 @@ class HttpRouter extends Actor with ActorLogging with HttpService {
   }
 
   /**
+    * The WebSocket flow function to exchange data between cluster and client
+    *
+    * @return
+    */
+  override def webSocketHandler(): Flow[Message, Message, _] = {
+    Flow[Message].map {
+      case TextMessage.Strict(txt) => TextMessage(s"Hello $txt!")
+      case _ => TextMessage(WorkersFlow.unsupportedMessageType)
+    }
+  }
+
+  /**
     * Returns a route where a connection is established between a WebSocket client and a Cluster Backend
     *
     * @param nodeId The id of the node we wish to monitor
     * @return
     */
-  override def workersExchangeRoute(nodeId: String): StandardRoute = {
-    val workersExchangeHandler = context.actorOf(Props[WorkersExchangeHandler])
-    implicit val timeout = Timeout(HttpService.workersExchangeTimeoutDuration)
-    val future = workersExchangeHandler ? nodeId
-    Await.result(future, timeout.duration).asInstanceOf[StandardRoute]
+  override def workersExchangeRoute(nodeId: String): Route = {
+    val piNodePublisherActorRefPath =
+      s"/${Master.masterNodeName}/${Master.childNodeName}$nodeId/${ClusterBackend.stringPublisherRelativeActorPath}"
+    val routeFuture = establishConnectionWithPiNode(piNodePublisherActorRefPath)
+
+    // Wait for the backend to be ready before opening the WebSocket connection with the client
+    Await.result(routeFuture, HttpService.workersExchangeTimeoutDuration)
   }
 
   def serveRoutes() = {

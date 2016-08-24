@@ -1,6 +1,11 @@
 #Distributed Message Passing System
 
-##Integration tests:
+## Getting Started
+It is recommended to run this project in IntelliJ. When starting up this project in IntelliJ, directories need to be labeled properly. To do this, do the following:
+
+Right click on ***src/main/scala*** and select **Mark Directory as -> Sources Root**. Similarly, under **src**, mark the test directory as **Test Sources Root**. One last thing: under ***src/multi-jvm*** **unmark scala as Test Sources Root**. This needs to to unmarked because when running tests, IntelliJ will try to run the integration tests which should only be ran via SBT.
+
+##Integration Tests:
 In [Akka](http://akka.io/), integration tests are tests that are ran on multiple JVMs to simulate multiple nodes in a cluster. All integration tests must be under `src/main/multi-jvm` and often need their own configuration.
 
 ####IntelliJ Setup
