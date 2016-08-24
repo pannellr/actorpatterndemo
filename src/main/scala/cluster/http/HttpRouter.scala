@@ -12,7 +12,7 @@ import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.io.StdIn
 
 /**
@@ -49,6 +49,8 @@ trait HttpService {
       }
   }
 
+  implicit def executor: ExecutionContextExecutor
+
   /**
     * Returns a route where a connection is established between a WebSocket client and a Cluster Backend
     *
@@ -56,18 +58,6 @@ trait HttpService {
     * @return
     */
   def workersExchangeRoute(nodeId: String): StandardRoute
-
-  implicit def executor: ExecutionContextExecutor
-
-  def example(nodeId: String): Future[String] = {
-    val myFuture = Future[String] {
-      nodeId
-    }
-    Await.result(myFuture, 1.second)
-    myFuture
-  }
-
-
 }
 
 class HttpRouter extends Actor with ActorLogging with HttpService {

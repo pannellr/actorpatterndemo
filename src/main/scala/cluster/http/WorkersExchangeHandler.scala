@@ -17,7 +17,6 @@ import scala.util.{Failure, Success}
   * Created by Brian.Yip on 8/23/2016.
   */
 object WorkersExchangeHandler {
-  val piNodePublisherActorPath = '/' + Master.masterNodeName + '/' + ClusterBackend.stringPublisherRelativeActorPath
   val actorPathResolutionTimeout = 2.seconds
 }
 
@@ -35,20 +34,23 @@ class WorkersExchangeHandler extends Actor with ActorLogging {
   }
 
   override def receive: Receive = {
-    case nodeId: String => establishConnectionWithPiNode(nodeId)
+    case nodeId: String =>
+      val piNodePublisherActorRefPath =
+        s"/${Master.masterNodeName}/${Master.childNodeName}$nodeId/${ClusterBackend.stringPublisherRelativeActorPath}"
+      establishConnectionWithPiNode(piNodePublisherActorRefPath)
   }
 
-  def establishConnectionWithPiNode(nodeId: String): Unit = {
+  def establishConnectionWithPiNode(piNodePath: String): Future[StandardRoute] = {
     implicit val timeout = Timeout(HttpService.workersExchangeTimeoutDuration)
-    val piNodePath = WorkersExchangeHandler.piNodePublisherActorPath
     val standardRoutePromise = Promise[StandardRoute]
     val standardRouteFuture = standardRoutePromise.future
     resolveActorPath(piNodePath, standardRoutePromise)
 
     standardRouteFuture.andThen {
-      case Success(route) => sender ! route
-      case Failure(ex) => sender ! complete(ex)
+      case Success(route) => route
+      case Failure(ex) => complete(ex)
     }
+    standardRouteFuture
   }
 
   def resolveActorPath(actorPath: String, standardRoutePromise: Promise[StandardRoute]): Future[ActorRef] = {
