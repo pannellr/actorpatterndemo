@@ -1,17 +1,19 @@
 package cluster.http
 
-import akka.actor.{Actor, ActorLogging, ActorSystem}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.{InitialStateAsEvents, MemberEvent, UnreachableMember}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.ws.{Message, TextMessage}
+import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Flow
+import akka.stream.actor.ActorPublisher
+import akka.stream.scaladsl.{Flow, Source}
 import cluster.websocket.WebSocketFlow
 import cluster.{ClusterBackend, Master}
 import com.typesafe.config.ConfigFactory
+import org.reactivestreams.Publisher
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContextExecutor}
@@ -61,7 +63,8 @@ trait HttpService {
   def workersExchangeRoute(nodeId: String): Route
 }
 
-class HttpRouter extends Actor with ActorLogging with HttpService with WorkersExchange {
+class HttpRouter extends Actor with ActorLogging with HttpService with WorkersExchange with WebSocketFlow {
+
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
@@ -86,18 +89,6 @@ class HttpRouter extends Actor with ActorLogging with HttpService with WorkersEx
   }
 
   /**
-    * The WebSocket flow function to exchange data between cluster and client
-    *
-    * @return
-    */
-  override def webSocketHandler(): Flow[Message, Message, _] = {
-    Flow[Message].map {
-      case TextMessage.Strict(txt) => TextMessage(s"Hello $txt!")
-      case _ => TextMessage(WebSocketFlow.unsupportedMessageType)
-    }
-  }
-
-  /**
     * Returns a route where a connection is established between a WebSocket client and a Cluster Backend
     *
     * @param nodeId The id of the node we wish to monitor
@@ -110,6 +101,12 @@ class HttpRouter extends Actor with ActorLogging with HttpService with WorkersEx
 
     // Wait for the backend to be ready before opening the WebSocket connection with the client
     Await.result(routeFuture, HttpService.workersExchangeTimeoutDuration)
+  }
+
+  override def webSocketHandler(wsMessagePublisherRef: ActorRef): Flow[Message, Message, _] = {
+    val actorPublisher: Publisher[Message] = ActorPublisher[Message](wsMessagePublisherRef)
+    val messagePublisherSource: Source[Message, _] = Source.fromPublisher(actorPublisher)
+    webSocketFlow(messagePublisherSource)
   }
 
   def serveRoutes() = {

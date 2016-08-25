@@ -1,6 +1,6 @@
 package cluster.http
 
-import akka.actor.{Actor, ActorNotFound, ActorSystem}
+import akka.actor.{Actor, ActorNotFound, ActorRef, ActorSystem}
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
@@ -30,12 +30,7 @@ class WorkersExchangeHandlerSpec extends TestKit(ActorSystem("WorkersExchangeHan
       case _ =>
     }
 
-    /**
-      * The WebSocket flow function to exchange data between cluster and client
-      *
-      * @return
-      */
-    override def webSocketHandler(): Flow[Message, Message, _] = {
+    override def webSocketHandler(wsMessagePublisherRef: ActorRef): Flow[Message, Message, _] = {
       Flow[Message].map {
         case TextMessage.Strict(txt) => TextMessage(s"Hello $txt!")
         case _ => TextMessage(WebSocketFlow.unsupportedMessageType)

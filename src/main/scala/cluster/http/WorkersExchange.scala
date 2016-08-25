@@ -22,13 +22,13 @@ object WorkersExchange {
 trait WorkersExchange {
 
   val context: ActorContext
-
   /**
     * The WebSocket flow function to exchange data between cluster and client
     *
+    * @param wsMessagePublisherRef The actor publisher reference from which we wish to receive messages from
     * @return
     */
-  def webSocketHandler(): Flow[Message, Message, _]
+  def webSocketHandler(wsMessagePublisherRef: ActorRef): Flow[Message, Message, _]
 
   def establishConnectionWithPiNode(piNodePath: String): Future[Route] = {
     implicit val timeout = Timeout(HttpService.workersExchangeTimeoutDuration)
@@ -46,8 +46,10 @@ trait WorkersExchange {
   def resolveActorPath(actorPath: String, routePromise: Promise[Route]): Future[ActorRef] = {
     implicit val timeout = Timeout(WorkersExchange.actorPathResolutionTimeout)
     context.actorSelection(actorPath).resolveOne().andThen {
-      case Success(actor) => routePromise.success(handleWebSocketMessages(webSocketHandler()))
-      case Failure(ex) => routePromise.failure(ex)
+      case Success(messagePublisher) =>
+        routePromise.success(handleWebSocketMessages(webSocketHandler(messagePublisher)))
+      case Failure(ex) =>
+        routePromise.failure(ex)
     }
   }
 
