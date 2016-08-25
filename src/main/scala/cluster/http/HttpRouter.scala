@@ -9,7 +9,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
-import cluster.{ClusterBackend, Master, WorkersFlow}
+import cluster.websocket.WebSocketFlow
+import cluster.{ClusterBackend, Master}
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
@@ -40,7 +41,6 @@ trait HttpService {
       pathPrefix("ws") {
         path("echo") {
           complete(HttpService.echoMessage)
-          //                            handleWebSocketMessages(echoService)
         } ~
           path("workers-exchange") {
             parameters('nodeId) { (nodeId) =>
@@ -61,14 +61,14 @@ trait HttpService {
   def workersExchangeRoute(nodeId: String): Route
 }
 
-class HttpRouter extends Actor with ActorLogging with HttpService with WorkersExchangeHandler {
+class HttpRouter extends Actor with ActorLogging with HttpService with WorkersExchange {
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
 
+  val cluster = Cluster(context.system)
   val config = ConfigFactory.load()
   val interface = config.getString("http.interface")
   val port = config.getInt("http.port")
-  val cluster = Cluster(context.system)
 
   override implicit def executor: ExecutionContextExecutor = system.dispatcher
 
@@ -93,7 +93,7 @@ class HttpRouter extends Actor with ActorLogging with HttpService with WorkersEx
   override def webSocketHandler(): Flow[Message, Message, _] = {
     Flow[Message].map {
       case TextMessage.Strict(txt) => TextMessage(s"Hello $txt!")
-      case _ => TextMessage(WorkersFlow.unsupportedMessageType)
+      case _ => TextMessage(WebSocketFlow.unsupportedMessageType)
     }
   }
 

@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import akka.util.Timeout
-import cluster.WorkersFlow
+import cluster.websocket.WebSocketFlow
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -25,7 +25,7 @@ class WorkersExchangeHandlerSpec extends TestKit(ActorSystem("WorkersExchangeHan
     TestKit.shutdownActorSystem(system)
   }
 
-  class WorkersExchangeHandlerImpl extends Actor with WorkersExchangeHandler {
+  class WorkersExchangeImpl extends Actor with WorkersExchange {
     override def receive: Receive = {
       case _ =>
     }
@@ -38,13 +38,13 @@ class WorkersExchangeHandlerSpec extends TestKit(ActorSystem("WorkersExchangeHan
     override def webSocketHandler(): Flow[Message, Message, _] = {
       Flow[Message].map {
         case TextMessage.Strict(txt) => TextMessage(s"Hello $txt!")
-        case _ => TextMessage(WorkersFlow.unsupportedMessageType)
+        case _ => TextMessage(WebSocketFlow.unsupportedMessageType)
       }
     }
   }
 
   "An WorkersExchangeHandler actor" must {
-    val workersExchangeActor = TestActorRef(new WorkersExchangeHandlerImpl)
+    val workersExchangeActor = TestActorRef(new WorkersExchangeImpl)
 
     "be able to resolve an actor path" in {
       val probeRef = TestProbe().ref

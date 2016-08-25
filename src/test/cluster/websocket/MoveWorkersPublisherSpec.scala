@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 /**
   * Created by Brian.Yip on 8/2/2016.
   */
-class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
+class MoveWorkersPublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
   with ImplicitSender
   with Matchers
   with WordSpecLike
@@ -26,9 +26,9 @@ class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
     TestKit.shutdownActorSystem(system)
   }
 
-  "A MessagePublisher" must {
+  "A MoveWorkersPublisher" must {
     implicit val materializer = ActorMaterializer()
-    val messagePublisherRef = system.actorOf(Props[MessagePublisher], "MessagePublisher")
+    val messagePublisherRef = system.actorOf(Props[MoveWorkersPublisher], "MessagePublisher")
     val messagePublisher = ActorPublisher[MoveWorkersSuccess](messagePublisherRef)
     val source = Source.fromPublisher(messagePublisher)
     val testSink = TestSink.probe[MoveWorkersSuccess]
@@ -48,9 +48,9 @@ class MessagePublisherSpec extends TestKit(ActorSystem("MessagePublisherSpec"))
 
       // The publisher should now publish to its subscriber
       val firstExpectedMessage =
-      MoveWorkersSuccess(MessagePublisher.missingDestinationActorMessage, MoveWorkersSuccess.Status.FAIL)
+      MoveWorkersSuccess(MoveWorkersPublisher.missingDestinationActorMessage, MoveWorkersSuccess.Status.FAIL)
       val secondExpectedMessage =
-        MoveWorkersSuccess(MessagePublisher.missingSourceActorMessage, MoveWorkersSuccess.Status.FAIL)
+        MoveWorkersSuccess(MoveWorkersPublisher.missingSourceActorMessage, MoveWorkersSuccess.Status.FAIL)
       subscription.expectNext(500.millis, firstExpectedMessage)
       subscription.expectNext(500.millis, secondExpectedMessage)
     }

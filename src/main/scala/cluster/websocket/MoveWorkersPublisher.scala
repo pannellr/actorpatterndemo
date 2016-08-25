@@ -2,19 +2,18 @@ package cluster.websocket
 
 import akka.actor.ActorLogging
 import akka.stream.actor.ActorPublisher
-import cluster.WorkersFlow
 import generated.models.{MoveWorkers, MoveWorkersSuccess}
 
 /**
   * Created by Brian.Yip on 7/29/2016.
   */
 
-object MessagePublisher {
+object MoveWorkersPublisher {
   val missingDestinationActorMessage = "Please specify a destination actor name"
   val missingSourceActorMessage = "Please specify a source actor name"
 }
 
-class MessagePublisher extends ActorPublisher[MoveWorkersSuccess] with ActorLogging {
+class MoveWorkersPublisher extends ActorPublisher[MoveWorkersSuccess] with ActorLogging {
 
   override def receive: Receive = {
     case moveWorkers: MoveWorkers =>
@@ -25,7 +24,7 @@ class MessagePublisher extends ActorPublisher[MoveWorkersSuccess] with ActorLogg
         onNext(moveWorkersSuccess)
       }
     case _ =>
-      log.info(WorkersFlow.unsupportedMessageType)
+      log.info(WebSocketFlow.unsupportedMessageType)
   }
 
 
@@ -38,9 +37,9 @@ class MessagePublisher extends ActorPublisher[MoveWorkersSuccess] with ActorLogg
     }
 
     if (moveWorkersMessage.destinationActorPath.isEmpty)
-      onNext(MoveWorkersSuccess(MessagePublisher.missingDestinationActorMessage, MoveWorkersSuccess.Status.FAIL))
+      onNext(MoveWorkersSuccess(MoveWorkersPublisher.missingDestinationActorMessage, MoveWorkersSuccess.Status.FAIL))
     if (moveWorkersMessage.sourceActorPath.isEmpty)
-      onNext(MoveWorkersSuccess(MessagePublisher.missingSourceActorMessage, MoveWorkersSuccess.Status.FAIL))
+      onNext(MoveWorkersSuccess(MoveWorkersPublisher.missingSourceActorMessage, MoveWorkersSuccess.Status.FAIL))
   }
 
   private def proxyMessageToClusterBackend(moveWorkersMessage: MoveWorkers): Unit = {

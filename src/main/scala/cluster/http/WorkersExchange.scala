@@ -15,11 +15,11 @@ import scala.util.{Failure, Success}
 /**
   * Created by Brian.Yip on 8/23/2016.
   */
-object WorkersExchangeHandler {
+object WorkersExchange {
   val actorPathResolutionTimeout = 2.seconds
 }
 
-trait WorkersExchangeHandler {
+trait WorkersExchange {
 
   val context: ActorContext
 
@@ -44,7 +44,7 @@ trait WorkersExchangeHandler {
   }
 
   def resolveActorPath(actorPath: String, routePromise: Promise[Route]): Future[ActorRef] = {
-    implicit val timeout = Timeout(WorkersExchangeHandler.actorPathResolutionTimeout)
+    implicit val timeout = Timeout(WorkersExchange.actorPathResolutionTimeout)
     context.actorSelection(actorPath).resolveOne().andThen {
       case Success(actor) => routePromise.success(handleWebSocketMessages(webSocketHandler()))
       case Failure(ex) => routePromise.failure(ex)

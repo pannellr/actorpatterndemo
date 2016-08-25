@@ -3,7 +3,7 @@ package cluster
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
-import cluster.websocket.StringPublisher
+import cluster.websocket.WSMessagePublisher
 import generated.models._
 
 import scala.collection.mutable
@@ -24,7 +24,7 @@ class ClusterBackend extends Actor with ActorLogging {
   }
 
   private def createMessagePublisher(): Unit = {
-    context.actorOf(Props[StringPublisher], ClusterBackend.stringPublisherRelativeActorPath)
+    context.actorOf(Props[WSMessagePublisher], ClusterBackend.stringPublisherRelativeActorPath)
   }
 
   override def postStop(): Unit = {

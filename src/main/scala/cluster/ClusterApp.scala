@@ -5,10 +5,6 @@ import cluster.http.HttpRouter
 import com.typesafe.config.ConfigFactory
 import generated.models.{StartAddingWorkers, Worker}
 
-object WorkersFlow {
-  val unsupportedMessageType = "Message type not supported"
-}
-
 object ClusterApp extends App {
   type Workers = Seq[Worker]
   type WorkersFilter = Workers => Boolean
