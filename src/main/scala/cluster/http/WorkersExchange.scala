@@ -1,7 +1,7 @@
 package cluster.http
 
 import akka.actor.{ActorContext, ActorRef}
-import akka.http.scaladsl.model.ws.Message
+import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
@@ -17,6 +17,8 @@ import scala.util.{Failure, Success}
   */
 object WorkersExchange {
   val actorPathResolutionTimeout = 2.seconds
+
+  def routeNotFoundForPath(actorPath: String): String = s"Actor not found for route: $actorPath"
 }
 
 trait WorkersExchange {
@@ -34,13 +36,19 @@ trait WorkersExchange {
     implicit val timeout = Timeout(HttpService.workersExchangeTimeoutDuration)
     val routePromise = Promise[Route]
     val routeFuture = routePromise.future
+
     resolveActorPath(piNodePath, routePromise)
 
     routeFuture.andThen {
       case Success(route) => route
-      case Failure(ex) => complete(ex)
+      case Failure(ex) => noSuchPiNodeWSFlow(piNodePath)
     }
     routeFuture
+  }
+
+  def noSuchPiNodeWSFlow(piNodePath: String): Flow[Message, Message, _] = Flow[Message].map {
+    case tm: TextMessage => TextMessage(WorkersExchange.routeNotFoundForPath(piNodePath))
+    case bm: BinaryMessage => TextMessage(WorkersExchange.routeNotFoundForPath(piNodePath))
   }
 
   def resolveActorPath(actorPath: String, routePromise: Promise[Route]): Future[ActorRef] = {
@@ -48,8 +56,7 @@ trait WorkersExchange {
     context.actorSelection(actorPath).resolveOne().andThen {
       case Success(messagePublisher) =>
         routePromise.success(handleWebSocketMessages(webSocketHandler(messagePublisher)))
-      case Failure(ex) =>
-        routePromise.failure(ex)
+      case Failure(ex) => routePromise.failure(ex)
     }
   }
 

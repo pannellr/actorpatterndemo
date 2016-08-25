@@ -30,8 +30,9 @@ class Master(children: Int) extends Actor with ActorLogging {
   }
 
   def initializeChildren(): Unit = {
-    for (i <- 1 to children) {
-      childNodes += (i -> context.actorOf(Props[ClusterBackend], s"${Master.childNodeName}$i"))
+    for (piNodeId <- 1 to children) {
+      childNodes +=
+        (piNodeId -> context.actorOf(Props(new ClusterBackend(piNodeId)), s"${Master.childNodeName}$piNodeId"))
     }
   }
 
@@ -82,7 +83,7 @@ class Master(children: Int) extends Actor with ActorLogging {
 
   def generateRandomWorkers(workerCount: Int): Seq[Worker] = {
     val result = mutable.MutableList[Worker]()
-    for (i <- 0 to workerCount) {
+    for (i <- 1 to workerCount) {
       result += new Worker(generateRandomWorkerName())
     }
     result

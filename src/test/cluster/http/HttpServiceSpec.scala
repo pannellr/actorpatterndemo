@@ -2,13 +2,13 @@ package cluster.http
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.StandardRoute
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.testkit.{ScalatestRouteTest, WSProbe}
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
   * Created by Brian.Yip on 8/19/2016.
   */
-class HttpRouterSpec extends FlatSpec with Matchers with ScalatestRouteTest with HttpService {
+class HttpServiceSpec extends FlatSpec with Matchers with ScalatestRouteTest with HttpService {
 
   override def workersExchangeRoute(nodeId: String): StandardRoute = {
     complete(nodeId)
@@ -21,8 +21,13 @@ class HttpRouterSpec extends FlatSpec with Matchers with ScalatestRouteTest with
   }
 
   it should "send an echo reply back" in {
-    Get("/ws/echo") ~> route ~> check {
-      responseAs[String] shouldBe HttpService.echoMessage
+    val wsClient = WSProbe()
+
+    WS("/ws/echo", wsClient.flow) ~> route ~> check {
+      isWebSocketUpgrade shouldEqual true
+
+      wsClient.sendMessage("FooBar")
+      wsClient.expectMessage("ECHO: FooBar")
     }
   }
 

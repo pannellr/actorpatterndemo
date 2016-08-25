@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.Flow
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit, TestProbe}
 import akka.util.Timeout
-import cluster.websocket.WebSocketFlow
+import cluster.websocket.WSFlow
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.duration._
@@ -15,7 +15,7 @@ import scala.concurrent.{Await, Promise}
 /**
   * Created by Brian.Yip on 8/23/2016.
   */
-class WorkersExchangeHandlerSpec extends TestKit(ActorSystem("WorkersExchangeHandlerSpec"))
+class WorkersExchangeSpec extends TestKit(ActorSystem("WorkersExchangeSpec"))
   with ImplicitSender
   with Matchers
   with WordSpecLike
@@ -33,7 +33,7 @@ class WorkersExchangeHandlerSpec extends TestKit(ActorSystem("WorkersExchangeHan
     override def webSocketHandler(wsMessagePublisherRef: ActorRef): Flow[Message, Message, _] = {
       Flow[Message].map {
         case TextMessage.Strict(txt) => TextMessage(s"Hello $txt!")
-        case _ => TextMessage(WebSocketFlow.unsupportedMessageType)
+        case _ => TextMessage(WSFlow.unsupportedMessageType)
       }
     }
   }

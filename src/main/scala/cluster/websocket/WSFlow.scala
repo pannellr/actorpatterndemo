@@ -8,22 +8,16 @@ import akka.util.ByteString
 /**
   * Created by Brian.Yip on 8/22/2016.
   */
-object WebSocketFlow {
+object WSFlow {
   val notImplementedMessage = "Feature not implemented"
   val unsupportedMessageType = "Message type not supported"
 }
 
-trait WebSocketFlow {
+trait WSFlow {
 
   def workersFlow(): Flow[Message, Message, _] = Flow[Message].map {
     case TextMessage.Strict(text) => TextMessage("Got a text message!")
     case BinaryMessage.Strict(data: ByteString) => TextMessage("Got a binary message!")
-    case _ => TextMessage(WebSocketFlow.unsupportedMessageType)
-  }
-
-  def echoService(): Flow[Message, Message, _] = Flow[Message].map {
-    case TextMessage.Strict(txt) => TextMessage("ECHO: " + txt)
-    case _ => TextMessage(WebSocketFlow.unsupportedMessageType)
   }
 
   def webSocketFlow(messagePublisherSource: Source[Message, _]): Flow[Message, Message, _] =
@@ -37,7 +31,7 @@ trait WebSocketFlow {
             // Let the client know that we are alive and what we are up to.
             // Once the worker has successfully been moved, we will then send a push
             // notification to the client using this same WebSocket
-            case TextMessage.Strict(text) => TextMessage(WebSocketFlow.notImplementedMessage)
+            case TextMessage.Strict(text) => TextMessage(WSFlow.notImplementedMessage)
           }
         )
 
@@ -48,7 +42,7 @@ trait WebSocketFlow {
         val toWebSocket = builder.add(
           Flow[Message].map {
             case TextMessage.Strict(text) => TextMessage(text)
-            case _ => TextMessage(WebSocketFlow.unsupportedMessageType)
+            case _ => TextMessage(WSFlow.unsupportedMessageType)
           }
         )
 

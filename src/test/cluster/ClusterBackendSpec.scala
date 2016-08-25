@@ -4,7 +4,7 @@ package cluster
   * Created by Brian.Yip on 7/21/2016.
   */
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestActorRef, TestActors, TestKit}
 import generated.models._
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
@@ -35,7 +35,7 @@ class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterBackendSpec"))
   "A ClusterBackend" must {
 
     "append a new worker when it receives an AddWorkers message" in {
-      val clusterBackend = TestActorRef(new ClusterBackend())
+      val clusterBackend = TestActorRef(new ClusterBackend(1))
       val workers = Seq[Worker](new Worker("Tim"), new Worker("Jim"))
       val addWorkersMessage = AddWorkers(workers)
 
@@ -51,7 +51,7 @@ class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterBackendSpec"))
     }
 
     "remove workers when it receives a RemoveWorkers message" in {
-      val clusterBackend = TestActorRef(new ClusterBackend())
+      val clusterBackend = TestActorRef(new ClusterBackend(2))
       val workers = Seq[Worker](new Worker("Tim"), new Worker("Jim"), new Worker("Bob"))
 
       clusterBackend ! AddWorkers(workers)
@@ -65,7 +65,7 @@ class ClusterBackendSpec() extends TestKit(ActorSystem("ClusterBackendSpec"))
     }
 
     "update its workers when it receives an MoveWorkers message" in {
-      val clusterBackend = system.actorOf(Props[ClusterBackend])
+      val clusterBackend = TestActorRef(new ClusterBackend(3))
       val oneWorker = Seq[Worker](new Worker("Alice"))
       clusterBackend ! MoveWorkers(oneWorker)
       expectMsg(WorkersResult(oneWorker))

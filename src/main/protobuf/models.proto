@@ -48,3 +48,7 @@ message StopAddingWorkers {
 message MakeWebSocketConnection {
 
 }
+
+message ServeRoutes {
+
+}

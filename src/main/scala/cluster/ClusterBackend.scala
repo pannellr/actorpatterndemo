@@ -3,16 +3,17 @@ package cluster
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent._
+import akka.http.scaladsl.model.ws.TextMessage
 import cluster.websocket.WSMessagePublisher
 import generated.models._
 
 import scala.collection.mutable
 
 object ClusterBackend {
-  val stringPublisherRelativeActorPath = "StringPublisher"
+  val WSMessagePublisherRelativeActorPath = WSMessagePublisher.getClass.getSimpleName
 }
 
-class ClusterBackend extends Actor with ActorLogging {
+class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
   var workers = mutable.MutableList[Worker]()
@@ -23,8 +24,8 @@ class ClusterBackend extends Actor with ActorLogging {
     createMessagePublisher()
   }
 
-  private def createMessagePublisher(): Unit = {
-    context.actorOf(Props[WSMessagePublisher], ClusterBackend.stringPublisherRelativeActorPath)
+  def createMessagePublisher(): Unit = {
+    context.actorOf(Props[WSMessagePublisher], ClusterBackend.WSMessagePublisherRelativeActorPath)
   }
 
   override def postStop(): Unit = {
@@ -42,24 +43,25 @@ class ClusterBackend extends Actor with ActorLogging {
     case _: MemberEvent => // ignore
   }
 
-  private def handleAddWorkers(incomingWorkers: Seq[Worker]): Unit = {
+  def handleAddWorkers(incomingWorkers: Seq[Worker]): Unit = {
     incomingWorkers.foreach {
       worker => workers += worker
     }
+    log.info(s"PI node $nodeId's workers: ${workers.size}")
     sendWorkerCountToPublisher()
   }
 
-  private def sendWorkerCountToPublisher(): Unit = {
-    val stringPublisherRef = context.actorSelection(ClusterBackend.stringPublisherRelativeActorPath)
-    stringPublisherRef ! workers.size.toString
-  }
-
-  private def handleRemoveWorkers(workerCount: Int): Unit = {
+  def handleRemoveWorkers(workerCount: Int): Unit = {
     workers = workers.drop(workerCount)
     sendWorkerCountToPublisher()
   }
 
-  private def handleMoveWorkers(incomingWorkers: Seq[Worker]): Unit = {
+  def sendWorkerCountToPublisher(): Unit = {
+    val stringPublisherRef = context.actorSelection(ClusterBackend.WSMessagePublisherRelativeActorPath)
+    stringPublisherRef ! TextMessage(workers.size.toString)
+  }
+
+  def handleMoveWorkers(incomingWorkers: Seq[Worker]): Unit = {
     workers = mutable.MutableList[Worker]()
     incomingWorkers.foreach {
       worker => workers += worker

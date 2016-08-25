@@ -16,11 +16,11 @@ import scala.concurrent.duration._
 /**
   * Created by Brian.Yip on 8/24/2016.
   */
-class WebSocketFlowSpec extends FlatSpec
+class WSFlowSpec extends FlatSpec
   with Matchers
   with BeforeAndAfterEach
   with ScalatestRouteTest
-  with WebSocketFlow {
+  with WSFlow {
 
   var actorPublisherRef: ActorRef = system.actorOf(Props[WSMessagePublisher])
   var actorPublisher: Publisher[Message] = ActorPublisher[Message](actorPublisherRef)
@@ -78,8 +78,8 @@ class WebSocketFlowSpec extends FlatSpec
     val sink = Sink.actorRef(probe.ref, "Complete")
     webSocketFlow(messagePublisherSource).runWith(source, sink)
 
-    probe.expectMsg(200.millis, TextMessage(WebSocketFlow.notImplementedMessage))
-    probe.expectMsg(200.millis, TextMessage(WebSocketFlow.unsupportedMessageType))
+    probe.expectMsg(200.millis, TextMessage(WSFlow.notImplementedMessage))
+    probe.expectMsg(200.millis, TextMessage(WSFlow.unsupportedMessageType))
 
     val publishedTextMessage = TextMessage("Hello!")
     actorPublisherRef ! publishedTextMessage
@@ -95,8 +95,8 @@ class WebSocketFlowSpec extends FlatSpec
     // This project is not currently in a state where it accepts commands from a WebSocket client
     // Just implement the handler in webSocketFlow for the incoming client messages to make this system
     // responsive to WebSocketClients
-    probe.expectMsg(200.millis, TextMessage(WebSocketFlow.notImplementedMessage))
-    probe.expectMsg(200.millis, TextMessage(WebSocketFlow.unsupportedMessageType))
+    probe.expectMsg(200.millis, TextMessage(WSFlow.notImplementedMessage))
+    probe.expectMsg(200.millis, TextMessage(WSFlow.unsupportedMessageType))
   }
 
 }

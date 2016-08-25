@@ -24,7 +24,7 @@ class MoveWorkersPublisher extends ActorPublisher[MoveWorkersSuccess] with Actor
         onNext(moveWorkersSuccess)
       }
     case _ =>
-      log.info(WebSocketFlow.unsupportedMessageType)
+      log.info(WSFlow.unsupportedMessageType)
   }
 
 
