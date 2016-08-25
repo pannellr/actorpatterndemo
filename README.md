@@ -5,6 +5,20 @@ It is recommended to run this project in IntelliJ. When starting up this project
 
 Right click on ***src/main/scala*** and select **Mark Directory as -> Sources Root**. Similarly, under **src**, mark the test directory as **Test Sources Root**. One last thing: under ***src/multi-jvm*** **unmark scala as Test Sources Root**. This needs to to unmarked because when running tests, IntelliJ will try to run the integration tests which should only be ran via SBT.
 
+## Running the Project
+
+To run the project, make sure that all dependencies have been downloaded by SBT. Then if you are using IntelliJ, right-click ***src/main/scala/ClusterApp*** and select **Run ClusterApp**. Make sure to have ***src/main/scala*** marked as **Source Root** before you do this!
+
+Now that the cluster is running, the fastest way to present the data (other than the cluster logs) is to donwload the [Dark WebSocket Terminal Chrome Extension](https://chrome.google.com/webstore/detail/dark-websocket-terminal/dmogdjmcpfaibncngoolgljgocdabhke?hl=en). Once you have this chrome extension downloaded, run it and in the Dark WebSocket Terminal, enter the following command (when running in a dev environment):
+
+    /connect ws://localhost:9000/ws/workers-exchange?nodeId=1
+
+The **nodeId** GET parameter specifies which PI node you wish to monitor. If the node does not exist, you will not get a connection. By default, there are three nodes, so nodeId 1,2,3 should all work.
+
+You can also check to see if the server is alive and willing to work with WebSockets by connecting to the following route:
+
+    /connect ws://localhost:9000/ws/echo
+
 ##Integration Tests:
 In [Akka](http://akka.io/), integration tests are tests that are ran on multiple JVMs to simulate multiple nodes in a cluster. All integration tests must be under `src/main/multi-jvm` and often need their own configuration.
 

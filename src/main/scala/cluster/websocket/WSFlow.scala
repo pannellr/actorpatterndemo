@@ -9,7 +9,7 @@ import akka.util.ByteString
   * Created by Brian.Yip on 8/22/2016.
   */
 object WSFlow {
-  val notImplementedMessage = "Feature not implemented"
+  val notImplementedMessage = "I don't handle input yet"
   val unsupportedMessageType = "Message type not supported"
 }
 
@@ -42,7 +42,6 @@ trait WSFlow {
         val toWebSocket = builder.add(
           Flow[Message].map {
             case TextMessage.Strict(text) => TextMessage(text)
-            case _ => TextMessage(WSFlow.unsupportedMessageType)
           }
         )
 

@@ -36,8 +36,6 @@ class WSMessagePublisher extends ActorPublisher[Message] with ActorLogging {
         onNext(TextMessage(WSMessagePublisher.binaryMessageUnimplemented))
     case _ =>
       log.info(WSFlow.unsupportedMessageType)
-      if (canPublish)
-        onNext(TextMessage(WSFlow.unsupportedMessageType))
   }
 
   private def canPublish: Boolean = isActive && totalDemand > 0

@@ -79,7 +79,6 @@ class WSFlowSpec extends FlatSpec
     webSocketFlow(messagePublisherSource).runWith(source, sink)
 
     probe.expectMsg(200.millis, TextMessage(WSFlow.notImplementedMessage))
-    probe.expectMsg(200.millis, TextMessage(WSFlow.unsupportedMessageType))
 
     val publishedTextMessage = TextMessage("Hello!")
     actorPublisherRef ! publishedTextMessage
@@ -96,7 +95,6 @@ class WSFlowSpec extends FlatSpec
     // Just implement the handler in webSocketFlow for the incoming client messages to make this system
     // responsive to WebSocketClients
     probe.expectMsg(200.millis, TextMessage(WSFlow.notImplementedMessage))
-    probe.expectMsg(200.millis, TextMessage(WSFlow.unsupportedMessageType))
   }
 
 }

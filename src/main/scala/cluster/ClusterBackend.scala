@@ -47,18 +47,20 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
     incomingWorkers.foreach {
       worker => workers += worker
     }
-    log.info(s"PI node $nodeId's workers: ${workers.size}")
-    sendWorkerCountToPublisher()
+    log.info(myWorkersMessage)
+    sendMessageToPublisher(myWorkersMessage)
   }
 
   def handleRemoveWorkers(workerCount: Int): Unit = {
     workers = workers.drop(workerCount)
-    sendWorkerCountToPublisher()
+    sendMessageToPublisher(myWorkersMessage)
   }
 
-  def sendWorkerCountToPublisher(): Unit = {
+  def myWorkersMessage = s"PI node $nodeId's workers: ${workers.size}"
+
+  def sendMessageToPublisher(messageAsString: String): Unit = {
     val stringPublisherRef = context.actorSelection(ClusterBackend.WSMessagePublisherRelativeActorPath)
-    stringPublisherRef ! TextMessage(workers.size.toString)
+    stringPublisherRef ! TextMessage(messageAsString)
   }
 
   def handleMoveWorkers(incomingWorkers: Seq[Worker]): Unit = {

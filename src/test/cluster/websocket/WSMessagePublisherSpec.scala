@@ -43,10 +43,6 @@ class WSMessagePublisherSpec extends TestKit(ActorSystem("StringPublisherSpec"))
       val textMessage = TextMessage("Hello")
       wsMessagePublisherRef ! textMessage
 
-      // The publisher should now publish to its subscriber
-      // This first message is a reply to the subscription message
-      subscription.expectNext(500.millis, TextMessage(WSFlow.unsupportedMessageType))
-
       // This is the actual expected result
       subscription.expectNext(500.millis, textMessage)
     }
@@ -55,7 +51,6 @@ class WSMessagePublisherSpec extends TestKit(ActorSystem("StringPublisherSpec"))
       subscription.request(2)
       val binaryMessage = BinaryMessage(ByteString("foobar"))
       wsMessagePublisherRef ! binaryMessage
-      subscription.expectNext(500.millis, TextMessage(WSFlow.unsupportedMessageType))
       subscription.expectNext(500.millis, TextMessage(WSMessagePublisher.binaryMessageUnimplemented))
     }
   }
