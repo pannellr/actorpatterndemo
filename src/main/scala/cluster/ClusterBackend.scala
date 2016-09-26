@@ -18,6 +18,12 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   val cluster = Cluster(context.system)
   var workers = mutable.MutableList[Worker]()
 
+  // workOrders = number of seconds to work
+  val workOrders = new mutable.HashMap[String, Int]()
+  workOrders += ("green" -> 500)
+  workOrders += ("red" -> 1000)
+  workOrders += ("yellow" -> 1500)
+
   override def preStart(): Unit = {
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
@@ -55,10 +61,9 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
     sendMessageToPublisher(myWorkersMessage)
   }
 
-//  def handleRemoveWorkers(workerCount: Int): Unit = {
-//    workers = workers.drop(workerCount)
-//    sendMessageToPublisher(myWorkersMessage)
-//  }
+  def doWork(workTime: Int): Unit = {
+    Thread.sleep(workTime);
+  }
 
   def myWorkersMessage = s"PI node $nodeId's workers: ${workers.size}"
 
@@ -67,11 +72,4 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
     stringPublisherRef ! TextMessage(messageAsString)
   }
 
-//  def handleMoveWorkers(incomingWorkers: Seq[Worker]): Unit = {
-//    workers = mutable.MutableList[Worker]()
-//    incomingWorkers.foreach {
-//      worker => workers += worker
-//    }
-//    sender() ! WorkersResult(workers)
-//  }
 }
