@@ -33,17 +33,25 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   }
 
   def receive = {
+    case AddWorker(incomingWorker) => handleAddWorker(incomingWorker)
     case AddWorkers(incomingWorkers) => handleAddWorkers(incomingWorkers)
-
-//    case RemoveWorkers(workerCount) => handleRemoveWorkers(workerCount)
-//
-//    case MoveWorkers(incomingWorkers, destinationActorName, sourceActorName) =>
-//      handleMoveWorkers(incomingWorkers)
-
     case _: MemberEvent => // ignore
   }
 
-  def handleAddWorkers(incomingWorker: Worker): Unit = {
+  def handleAddWorkers(incomingWorkers: Seq[Worker]): Unit = {
+    incomingWorkers.foreach {
+      worker => workers += worker
+    }
+    log.info(myWorkersMessage)
+    sendMessageToPublisher(myWorkersMessage)
+  }
+
+  def handleAddWorker(incomingWorker: Option[Worker]): Unit = {
+
+    incomingWorker match {
+      case Some(worker) =>
+      case None =>
+    }
 
     println("!!!!!!!!!!!!!")
     println(incomingWorker)
@@ -55,23 +63,10 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
     sendMessageToPublisher(myWorkersMessage)
   }
 
-//  def handleRemoveWorkers(workerCount: Int): Unit = {
-//    workers = workers.drop(workerCount)
-//    sendMessageToPublisher(myWorkersMessage)
-//  }
-
   def myWorkersMessage = s"PI node $nodeId's workers: ${workers.size}"
 
   def sendMessageToPublisher(messageAsString: String): Unit = {
     val stringPublisherRef = context.actorSelection(ClusterBackend.WSMessagePublisherRelativeActorPath)
     stringPublisherRef ! TextMessage(messageAsString)
   }
-
-//  def handleMoveWorkers(incomingWorkers: Seq[Worker]): Unit = {
-//    workers = mutable.MutableList[Worker]()
-//    incomingWorkers.foreach {
-//      worker => workers += worker
-//    }
-//    sender() ! WorkersResult(workers)
-//  }
 }
