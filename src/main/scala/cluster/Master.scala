@@ -22,6 +22,15 @@ class Master(children: Int) extends Actor with ActorLogging {
   var cancellableTask: Cancellable = scheduler.schedule(1.second, 1.second, self, "Waiting for task...")
   var childIndex = 0
 
+
+  //workPlan by pannellr
+  val workPlan = new mutable.HashMap[String, Int]()
+  workPlan += ("green" -> 7)
+  workPlan += ("red" -> 3)
+  workPlan += ("yellow" -> 2)
+
+
+
   override def preStart(): Unit = {
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
@@ -73,29 +82,43 @@ class Master(children: Int) extends Actor with ActorLogging {
   def handleStartAddingWorkers(workerCount: Int): Unit = {
     log.info("Adding workers to children!")
 
-    val workers = generateRandomWorkers(workerCount)
+    //val workers = generateRandomWorkers(workerCount)
+
+    val workers = generateWorkersFromPlan()
 
     // TODO: This could be moved to the MessageSimulator actor
     cancellableTask.cancel()
     cancellableTask =
-      scheduler.schedule(1.second, 1.second, self, AddWorkers(workers))
+      scheduler.scheduleOnce(1.second, self, workers(0))
   }
 
-  def generateRandomWorkers(workerCount: Int): Seq[Worker] = {
+//  def generateRandomWorkers(workerCount: Int): Seq[Worker] = {
+//    val result = mutable.MutableList[Worker]()
+//    for (i <- 1 to workerCount) {
+//      result += new Worker(generateRandomWorkerName())
+//    }
+//    result
+//  }
+//
+//  def generateRandomWorkerName(): String = {
+//    var workerName = ""
+//    random.take(10).foreach {
+//      character => workerName += character
+//    }
+//    workerName
+//  }
+
+  def generateWorkersFromPlan(): Seq[Worker] = {
     val result = mutable.MutableList[Worker]()
-    for (i <- 1 to workerCount) {
-      result += new Worker(generateRandomWorkerName())
+    workPlan.foreach { worker =>
+      for (i <- 1 to worker._2) {
+        result += new Worker(worker._1)
+      }
     }
     result
   }
 
-  def generateRandomWorkerName(): String = {
-    var workerName = ""
-    random.take(10).foreach {
-      character => workerName += character
-    }
-    workerName
-  }
+
 }
 
 object Master {

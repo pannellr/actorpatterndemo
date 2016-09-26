@@ -35,26 +35,30 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   def receive = {
     case AddWorkers(incomingWorkers) => handleAddWorkers(incomingWorkers)
 
-    case RemoveWorkers(workerCount) => handleRemoveWorkers(workerCount)
-
-    case MoveWorkers(incomingWorkers, destinationActorName, sourceActorName) =>
-      handleMoveWorkers(incomingWorkers)
+//    case RemoveWorkers(workerCount) => handleRemoveWorkers(workerCount)
+//
+//    case MoveWorkers(incomingWorkers, destinationActorName, sourceActorName) =>
+//      handleMoveWorkers(incomingWorkers)
 
     case _: MemberEvent => // ignore
   }
 
-  def handleAddWorkers(incomingWorkers: Seq[Worker]): Unit = {
-    incomingWorkers.foreach {
-      worker => workers += worker
-    }
+  def handleAddWorkers(incomingWorker: Worker): Unit = {
+
+    println("!!!!!!!!!!!!!")
+    println(incomingWorker)
+
+//    incomingWorkers.foreach {
+//      worker => workers += worker
+//    }
     log.info(myWorkersMessage)
     sendMessageToPublisher(myWorkersMessage)
   }
 
-  def handleRemoveWorkers(workerCount: Int): Unit = {
-    workers = workers.drop(workerCount)
-    sendMessageToPublisher(myWorkersMessage)
-  }
+//  def handleRemoveWorkers(workerCount: Int): Unit = {
+//    workers = workers.drop(workerCount)
+//    sendMessageToPublisher(myWorkersMessage)
+//  }
 
   def myWorkersMessage = s"PI node $nodeId's workers: ${workers.size}"
 
@@ -63,11 +67,11 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
     stringPublisherRef ! TextMessage(messageAsString)
   }
 
-  def handleMoveWorkers(incomingWorkers: Seq[Worker]): Unit = {
-    workers = mutable.MutableList[Worker]()
-    incomingWorkers.foreach {
-      worker => workers += worker
-    }
-    sender() ! WorkersResult(workers)
-  }
+//  def handleMoveWorkers(incomingWorkers: Seq[Worker]): Unit = {
+//    workers = mutable.MutableList[Worker]()
+//    incomingWorkers.foreach {
+//      worker => workers += worker
+//    }
+//    sender() ! WorkersResult(workers)
+//  }
 }
