@@ -17,12 +17,13 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
 
   val cluster = Cluster(context.system)
   var workers = mutable.MutableList[Worker]()
+  var numWorkers = 0
 
   // workOrders = number of seconds to work
   val workOrders = new mutable.HashMap[String, Int]()
-  workOrders += ("green" -> 500)
-  workOrders += ("red" -> 1000)
-  workOrders += ("yellow" -> 1500)
+  workOrders += ("green" -> 2000)
+  workOrders += ("red" -> 5000)
+  workOrders += ("yellow" -> 15000)
 
   override def preStart(): Unit = {
     println("node prestart")
@@ -42,39 +43,30 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
 
   def receive = {
     //case AddWorker(incomingWorker) => println(incomingWorker) //handleAddWorker(incomingWorker)
-    case AddWorkers(incomingWorkers) => handleAddWorkers(incomingWorkers)
     case _: MemberEvent => println("no match")
+
+    case AddWorker(incomingWorker) =>
+      incomingWorker match {
+        case Some(worker) => handleAddWorker(worker)
+        case None =>
+      }
   }
 
-  def handleAddWorkers(incomingWorkers: Seq[Worker]): Unit = {
-    println("!!!handle add workers")
-    incomingWorkers.foreach {
-      worker => workers += worker
-    }
-    log.info(myWorkersMessage)
-    sendMessageToPublisher(myWorkersMessage)
+  def handleAddWorker(worker: Worker): Unit = {
+
+    println(worker)
+    val message = s"$nodeId|${worker.name}|$numWorkers"
+    println(message)
+    sendMessageToPublisher(message)
+    doWork(workOrders(worker.name))
+    numWorkers = numWorkers + 1
+    val doneMessage = s"$nodeId|none|$numWorkers"
+    sendMessageToPublisher(doneMessage)
   }
-
-  def handleAddWorker(incomingWorker: Option[Worker]): Unit = {
-
-    println("!!!!!!!!!!!!! handle add worker")
-//    println(incomingWorker)
-
-//    incomingWorker match {
-//      case Some(worker) =>
-//      case None =>
-//    }
-
-//    doWork(workOrders(incomingWorker))
-    //sendMessageToPublisher(myWorkersMessage)
-  }
-
 
   def doWork(workTime: Int): Unit = {
     Thread.sleep(workTime)
   }
-
-  def myWorkersMessage = s"PI node $nodeId's workers: ${workers.size}"
 
   def sendMessageToPublisher(messageAsString: String): Unit = {
     val stringPublisherRef = context.actorSelection(ClusterBackend.WSMessagePublisherRelativeActorPath)

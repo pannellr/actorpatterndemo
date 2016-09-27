@@ -17,6 +17,10 @@ message AddWorkers {
     repeated Worker workers = 1;
 }
 
+message AddWorker {
+    Worker worker = 1;
+}
+
 message RemoveWorkers {
     uint32 workers = 1;
 }
