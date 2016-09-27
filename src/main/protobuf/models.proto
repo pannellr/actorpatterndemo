@@ -9,6 +9,10 @@ message Worker {
     string name = 1;
 }
 
+message AddWorker {
+    Worker worker = 1;
+}
+
 message AddWorkers {
     repeated Worker workers = 1;
 }

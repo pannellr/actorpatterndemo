@@ -25,12 +25,14 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   workOrders += ("yellow" -> 1500)
 
   override def preStart(): Unit = {
+    println("node prestart")
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
     createMessagePublisher()
   }
 
   def createMessagePublisher(): Unit = {
+    println("create message publisher")
     context.actorOf(Props[WSMessagePublisher], ClusterBackend.WSMessagePublisherRelativeActorPath)
   }
 
@@ -39,30 +41,37 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   }
 
   def receive = {
+    //case AddWorker(incomingWorker) => println(incomingWorker) //handleAddWorker(incomingWorker)
     case AddWorkers(incomingWorkers) => handleAddWorkers(incomingWorkers)
-
-//    case RemoveWorkers(workerCount) => handleRemoveWorkers(workerCount)
-//
-//    case MoveWorkers(incomingWorkers, destinationActorName, sourceActorName) =>
-//      handleMoveWorkers(incomingWorkers)
-
-    case _: MemberEvent => // ignore
+    case _: MemberEvent => println("no match")
   }
 
-  def handleAddWorkers(incomingWorker: Worker): Unit = {
-
-    println("!!!!!!!!!!!!!")
-    println(incomingWorker)
-
-//    incomingWorkers.foreach {
-//      worker => workers += worker
-//    }
+  def handleAddWorkers(incomingWorkers: Seq[Worker]): Unit = {
+    println("!!!handle add workers")
+    incomingWorkers.foreach {
+      worker => workers += worker
+    }
     log.info(myWorkersMessage)
     sendMessageToPublisher(myWorkersMessage)
   }
 
+  def handleAddWorker(incomingWorker: Option[Worker]): Unit = {
+
+    println("!!!!!!!!!!!!! handle add worker")
+//    println(incomingWorker)
+
+//    incomingWorker match {
+//      case Some(worker) =>
+//      case None =>
+//    }
+
+//    doWork(workOrders(incomingWorker))
+    //sendMessageToPublisher(myWorkersMessage)
+  }
+
+
   def doWork(workTime: Int): Unit = {
-    Thread.sleep(workTime);
+    Thread.sleep(workTime)
   }
 
   def myWorkersMessage = s"PI node $nodeId's workers: ${workers.size}"

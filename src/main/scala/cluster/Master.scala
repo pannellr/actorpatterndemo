@@ -58,7 +58,7 @@ class Master(children: Int) extends Actor with ActorLogging {
 
     case StartAddingWorkers(workers) =>
       log.info("Start adding workers!")
-      handleStartAddingWorkers(workers)
+      handleStartAddingWorkers()
 
     case addWorkers: AddWorkers => handleAddWorkers(addWorkers)
 
@@ -79,43 +79,30 @@ class Master(children: Int) extends Actor with ActorLogging {
     }
   }
 
-  def handleStartAddingWorkers(workerCount: Int): Unit = {
+  def handleStartAddingWorkers(): Unit = {
     log.info("Adding workers to children!")
 
-    //val workers = generateRandomWorkers(workerCount)
+
 
     val workers = generateWorkersFromPlan()
+
+    println("!!!!!!!!")
+    println(workers)
 
     // TODO: This could be moved to the MessageSimulator actor
     cancellableTask.cancel()
     cancellableTask =
-      scheduler.scheduleOnce(1.second, self, workers(0))
+      scheduler.schedule(1.second, 1.second, self, workers)
   }
 
-//  def generateRandomWorkers(workerCount: Int): Seq[Worker] = {
-//    val result = mutable.MutableList[Worker]()
-//    for (i <- 1 to workerCount) {
-//      result += new Worker(generateRandomWorkerName())
-//    }
-//    result
-//  }
-//
-//  def generateRandomWorkerName(): String = {
-//    var workerName = ""
-//    random.take(10).foreach {
-//      character => workerName += character
-//    }
-//    workerName
-//  }
-
   def generateWorkersFromPlan(): Seq[Worker] = {
-    val result = mutable.MutableList[Worker]()
+    val workers = mutable.MutableList[Worker]()
     workPlan.foreach { worker =>
       for (i <- 1 to worker._2) {
-        result += new Worker(worker._1)
+        workers += new Worker(worker._1)
       }
     }
-    result
+    workers
   }
 
 
