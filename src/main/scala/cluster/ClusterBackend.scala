@@ -46,10 +46,11 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
 //    case MoveWorkers(incomingWorkers, destinationActorName, sourceActorName) =>
 //      handleMoveWorkers(incomingWorkers)
 
+
     case _: MemberEvent => // ignore
   }
 
-  def handleAddWorkers(incomingWorker: Worker): Unit = {
+  def handleAddWorkers(incomingWorker: Seq[Worker]): Unit = {
 
     println("!!!!!!!!!!!!!")
     println(incomingWorker)
@@ -62,7 +63,7 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   }
 
   def doWork(workTime: Int): Unit = {
-    Thread.sleep(workTime);
+    Thread.sleep(workTime)
   }
 
   def myWorkersMessage = s"PI node $nodeId's workers: ${workers.size}"

@@ -89,7 +89,7 @@ class Master(children: Int) extends Actor with ActorLogging {
     // TODO: This could be moved to the MessageSimulator actor
     cancellableTask.cancel()
     cancellableTask =
-      scheduler.scheduleOnce(1.second, self, workers(0))
+      scheduler.scheduleOnce(1.second, self, AddWorkers(workers))
   }
 
 //  def generateRandomWorkers(workerCount: Int): Seq[Worker] = {
