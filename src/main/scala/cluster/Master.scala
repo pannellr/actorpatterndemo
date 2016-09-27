@@ -62,19 +62,29 @@ class Master(children: Int) extends Actor with ActorLogging {
 
     case addWorkers: AddWorkers => handleAddWorkers(addWorkers)
 
+    case addWorker: AddWorker => handleAddSingleWorker(addWorker)
+
     case string: String => log.info(string)
 
     case _ =>
   }
 
   def handleAddWorkers(addWorkersMessage: AddWorkers): Unit = {
+    proxyMessageToChild(addWorkersMessage)
+  }
+
+  def handleAddSingleWorker(addWorker: AddWorker): Unit = {
+    proxyMessageToChild(addWorker)
+  }
+
+  def proxyMessageToChild[Message](message: Message): Unit = {
     childIndex += 1
     if (childIndex % (children + 1) == 0)
       childIndex = 1
 
     val result = childNodes.get(childIndex)
     result match {
-      case Some(child) => child ! addWorkersMessage
+      case Some(child) => child ! message
       case None => log.warning(s"Child $childIndex does not exist!")
     }
   }
@@ -84,12 +94,12 @@ class Master(children: Int) extends Actor with ActorLogging {
 
     //val workers = generateRandomWorkers(workerCount)
 
-    val workers = generateWorkersFromPlan()
+    val worker = new Worker("Work!")
 
     // TODO: This could be moved to the MessageSimulator actor
     cancellableTask.cancel()
     cancellableTask =
-      scheduler.scheduleOnce(1.second, self, AddWorkers(workers))
+      scheduler.scheduleOnce(1.second, self, AddWorker(Option[Worker](worker)))
   }
 
 //  def generateRandomWorkers(workerCount: Int): Seq[Worker] = {

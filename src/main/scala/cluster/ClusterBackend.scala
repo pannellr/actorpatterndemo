@@ -41,6 +41,12 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   def receive = {
     case AddWorkers(incomingWorkers) => handleAddWorkers(incomingWorkers)
 
+    case AddWorker(incomingWorker) =>
+      incomingWorker match {
+        case Some(worker) => handleAddWorker(worker)
+        case None =>
+      }
+
 //    case RemoveWorkers(workerCount) => handleRemoveWorkers(workerCount)
 //
 //    case MoveWorkers(incomingWorkers, destinationActorName, sourceActorName) =>
@@ -50,10 +56,16 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
     case _: MemberEvent => // ignore
   }
 
-  def handleAddWorkers(incomingWorker: Seq[Worker]): Unit = {
+  def handleAddWorker(incomingWorker: Worker): Unit = {
+    log.info("Added one worker!!!!!!!!!!!!!")
+    log.info(myWorkersMessage)
+    sendMessageToPublisher(myWorkersMessage)
+  }
+
+  def handleAddWorkers(incomingWorkers: Seq[Worker]): Unit = {
 
     println("!!!!!!!!!!!!!")
-    println(incomingWorker)
+    println(incomingWorkers)
 
 //    incomingWorkers.foreach {
 //      worker => workers += worker
