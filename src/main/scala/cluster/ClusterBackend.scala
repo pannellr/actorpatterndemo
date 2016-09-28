@@ -26,14 +26,12 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
   workOrders += ("yellow" -> 15000)
 
   override def preStart(): Unit = {
-    println("node prestart")
     cluster.subscribe(self, initialStateMode = InitialStateAsEvents,
       classOf[MemberEvent], classOf[UnreachableMember])
     createMessagePublisher()
   }
 
   def createMessagePublisher(): Unit = {
-    println("create message publisher")
     context.actorOf(Props[WSMessagePublisher], ClusterBackend.WSMessagePublisherRelativeActorPath)
   }
 
@@ -54,13 +52,17 @@ class ClusterBackend(nodeId: Int) extends Actor with ActorLogging {
 
   def handleAddWorker(worker: Worker): Unit = {
 
-    println(worker)
+    //publish initial state to web socket
     val message = s"$nodeId|${worker.name}|$numWorkers"
-    println(message)
     sendMessageToPublisher(message)
+
     doWork(workOrders(worker.name))
+
+    //increment completed job count (state)
     numWorkers = numWorkers + 1
-    val doneMessage = s"$nodeId|none|$numWorkers"
+
+    //publish state after completion
+    val doneMessage = s"$nodeId|grey|$numWorkers"
     sendMessageToPublisher(doneMessage)
   }
 

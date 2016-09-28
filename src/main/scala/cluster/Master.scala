@@ -23,12 +23,22 @@ class Master(children: Int) extends Actor with ActorLogging {
   var childIndex = 0
 
 
-  //workPlan by pannellr
+  //workPlan for round robin
+//  val workPlan = new mutable.HashMap[String, Int]()
+//  workPlan += ("green" -> 3)
+//  workPlan += ("yellow" -> 1)
+
+  //workPlan basic
   val workPlan = new mutable.HashMap[String, Int]()
   workPlan += ("green" -> 7)
   workPlan += ("red" -> 3)
   workPlan += ("yellow" -> 2)
 
+  //workPlan long
+//  val workPlan = new mutable.HashMap[String, Int]()
+//  workPlan += ("green" -> 12)
+//  workPlan += ("red" -> 10)
+//  workPlan += ("yellow" -> 20)
 
 
   override def preStart(): Unit = {
@@ -90,13 +100,8 @@ class Master(children: Int) extends Actor with ActorLogging {
   }
 
   def handleStartAddingWorkers(): Unit = {
-    log.info("Adding workers to children!")
 
     val workers = generateWorkersFromPlan()
-
-    println("!!!!!!!!")
-    println(workers)
-
     for (worker <- workers) scheduler.scheduleOnce(1.second, self, AddWorker(Option[Worker](worker)))
 
 
